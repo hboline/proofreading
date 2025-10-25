@@ -9,6 +9,7 @@ def main(stdscr: curses.window):
 
     curses.start_color()
     curses.init_pair(1, 245, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
 
     app = App(stdscr)
     app.run()

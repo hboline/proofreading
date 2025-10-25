@@ -1,26 +1,14 @@
 from types import SimpleNamespace
-from typing import NamedTuple
-
-
-CLEAR_CONSOLE = '\033[2J'
-MOVE_CURSOR = '\033[H'
-
-VALID_BASE_INPUT = {
-   '`',
-   '\x1b', #esc
-   '0',
-}
-
-VALID_OPTIONS_INPUT = {
-  '1',
-  '`',
-  '\x08', #backspace
-  '\x1b', #esc
-}
 
 KEY = SimpleNamespace({
     "esc": '^[',
+    "bksp": '^H',
 })
+
+KEY_IGNORE = {
+    '',
+    "KEY_RESIZE",
+}
 
 # Ligature (or other problematic) character codes for conversion
 LIGDICT = {
@@ -58,7 +46,15 @@ COMERRDICT = {
     "fourthly": "fourth",
     "fifthly": "fifth",
     "sixthly": "sixth",
-    "—": ", ", 
+    "—": ", ",
+    " —": ", ",
+    # pronouns
+    "his": "their",
+    "him": "them",
+    "he": "they",
+    "her": "their",
+    # "her" "them", # TODO: how do I handle this?
+    "she": "they", 
 }
 
 # abbreviations (need to be handled slightly differently)
@@ -97,19 +93,15 @@ EN2AMDICT = {
     "individualis": "individualiz",
     "centre": "center",
     "travell": "travel",
+    "favour": "favor",
 }
+
 
 SYMBOLS = [
     '-',
     '\'',
     ' ',
     '.',
+    ',',
+    '"',
 ]
-
-WORDS = {
-    "and": "and",
-    "then": "Then, ",
-    ".": ".",
-    ":": ":",
-    ";": ";",
-}

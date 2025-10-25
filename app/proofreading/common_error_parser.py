@@ -1,6 +1,6 @@
 from typing import Callable
 
-from utils.constants import COMERRDICT, ABBVDICT, EN2AMDICT
+from ..utils.constants import COMERRDICT, ABBVDICT, EN2AMDICT
 
 def consume_dict(
     input: str,
@@ -8,7 +8,7 @@ def consume_dict(
     *args
 ) -> tuple[str, bool]:
     output = logic_func(input, *args)
-    check = input != output
+    check = input is not output
     return (output if check else input, check)
 
 def comerrdict_func(input: str) -> str:
@@ -41,22 +41,30 @@ def en2amdict_func(input: str, convert_english: bool = True) -> str:
             return output
     return input
 
-def number_fixer(input: str) -> str | None:
-    try:
-        number = int(input.replace(' ',''))
-    except ValueError:
-        return None
-    else:
-        if len(str(number)) >= 5:
-            return f"{number:,}"
+def number_fixer(input: str) -> str:
+    input = input.replace(' ','')
+    if ',' in input:
+        if len(num := input.replace(',','')) < 5:
+            return num
         else:
-            raise Exception("input number too short") 
+            raise Exception("number too long")
+    else:
+        if len(input) >= 5:
+            return f"{int(input):,}"
+        else:
+            raise Exception("number too short")
 
-def common_error_parser(input: str, convert_english) -> str | None:
+def common_error_parser(input: str, convert_english) -> str:
     # check if the input is a number and add comma if necessary
     # raises error if the number is fewer than 5 digits
-    if (number := number_fixer(input)) is not None:
-        return number
+    try:
+        _ = int(input.replace(' ','').replace(',',''))
+        return number_fixer(input)
+    except (ValueError, Exception) as e:
+        if isinstance(e, ValueError):
+            pass
+        else:
+            raise e
     
     # check for word capitalization before normalizing word
     capitalized = input[0].isupper()
@@ -66,9 +74,9 @@ def common_error_parser(input: str, convert_english) -> str | None:
     flag = False
     output = input
     dictList = [
+        (en2amdict_func, [convert_english]),
         (comerrdict_func, []),
         (abbvdict_func, []),
-        (en2amdict_func, [convert_english])
     ]
     for func, args in dictList:
         output, flag = consume_dict(input, func, *args)
