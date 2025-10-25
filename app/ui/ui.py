@@ -3,15 +3,13 @@ from dataclasses import dataclass
 from typing import List, Optional, Callable, TYPE_CHECKING, Tuple
 from functools import partial
 
-from app.utils.constants import KEY
-
-if TYPE_CHECKING:
-    from app import State
-
 import curses
 
 from ..actions import MAIN_ACTIONS, OPTIONS_ACTIONS, FuncContainer
 from ..utils import KEY_IGNORE
+from app.utils.constants import KEY
+if TYPE_CHECKING:
+    from app import State
 
 COLOR_GRAY = partial(curses.color_pair, 1)
 COLOR_RED = partial(curses.color_pair, 2)

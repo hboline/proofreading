@@ -1,13 +1,11 @@
-from functools import partial
-from pyautogui import hotkey
-import curses
-
 from dataclasses import dataclass, asdict
 from typing import Callable, Optional
 import os
 import inspect
 
-from app.utils.constants import SYMBOLS
+from functools import partial
+from pyautogui import hotkey
+import curses
 
 from .utils import Clipboard, Window
 from .ui import MainUI, OptionsUI, UIResult, BaseUI
