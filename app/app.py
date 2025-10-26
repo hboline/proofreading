@@ -52,7 +52,7 @@ class App():
     def run(self):
         while self.state.active_ui is not None:
             result = self.state.active_ui.run(self.state)
-            self.state.error = None
+            # self.state.error = None
             try:
                 self.handle_result(result)
             except Exception as e:
@@ -95,7 +95,6 @@ class App():
         
         vars_dict = asdict(self.state.vars)
         func_args = inspect.signature(func).parameters.keys()
-        # kwargs = {k:v for k,v in vars_dict.items() if k in func_args}
         kwargs.update([(k,v) for k,v in vars_dict.items() if k in func_args])
         
         # process action function
@@ -125,6 +124,8 @@ class App():
         # check for error
         if result.error:
             self.state.error = result.error
+        else:
+            self.state.error = None
 
         # check for actions
         if result.action:

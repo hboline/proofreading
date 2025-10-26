@@ -20,6 +20,29 @@ class UIResult():
     action: Optional[str | Callable | FuncContainer] = None
     error: Optional[Exception] = None
 
+def _curses_add_lines(
+    win: curses.window,
+    lines: List[str | Tuple[str, Callable]],
+    line_start: int = 0,
+):
+    for line_number, line in enumerate(lines):
+        text: str = ''
+        attr: int | Callable = 0
+        line_number += line_start
+        if isinstance(line, str):
+            text = line
+            attr = 0
+        elif isinstance(line, tuple):
+            text, attr = line
+            if isinstance(attr, Callable):
+                attr = attr()
+        try:
+            assert isinstance(text, str)
+            assert isinstance(attr, int)
+            win.addstr(line_number, 0, text, attr)
+        except curses.error:
+            pass
+
 # base UI class all UIs will inherit from 
 class BaseUI:
     lines: List[str | Tuple[str, Callable]]
@@ -30,25 +53,29 @@ class BaseUI:
     def draw(self, state: State) -> curses.window:
         win = state.screen
         win.clear()
-        
-        line_number: int = 0
-        for line_number, line in enumerate(self.lines):
-            if isinstance(line, str):
-                text = line
-                attr = 0
-            elif isinstance(line, tuple):
-                text, attr = line
-                if isinstance(attr, Callable):
-                    attr = attr() # this seems fucked up
-            else:
-                text, attr = ("", 0)
-            win.addstr(line_number, 0, text, attr)
 
-        if state.error:
-            win.addstr(line_number+2, 0, state.error.args[0], COLOR_RED())
-        
+        max_y, _ = win.getmaxyx()
+
+        # TODO: the "..."s aren't quite right; check ui
+        trunc: int = 0
+        sub_lines: List = self.lines.copy()
+        end_lines: List = []
+        if state.error is not None:
+            trunc = 3
+            sub_lines.extend(["",(state.error.args[0], COLOR_RED)])
+            end_lines = [("...",COLOR_GRAY)] + [sub_lines[-3],sub_lines[-1]]
+        elif state.error is None:
+            trunc = 2
+            end_lines = [("...",COLOR_GRAY)] + [sub_lines[-1]]
+
+        if max_y >= len(sub_lines):
+            _curses_add_lines(win, sub_lines)
+        else:
+            max_line = max_y-trunc
+            _curses_add_lines(win, sub_lines[:max_line])
+            _curses_add_lines(win,end_lines, max_line)
+
         win.move(0, 0)
-        win.refresh()
         return win
 
 class MainUI(BaseUI):
@@ -82,7 +109,7 @@ class MainUI(BaseUI):
         user_input: str = ''
         user_input = curses.keyname(win.getch()).decode()
         
-        output: UIResult = UIResult()
+        output: UIResult = UIResult(error = state.error)
         
         # ignore certain keypresses (e.g. curses.KEY_RESIZE)
         if user_input in KEY_IGNORE:
@@ -90,12 +117,15 @@ class MainUI(BaseUI):
 
         if user_input == '`':
             output.ui = "options"
+            output.error = None
             return output
 
         try:
             output.action = MAIN_ACTIONS[user_input]
         except KeyError:
             output.error = Exception(f"invalid input {user_input}")
+        else:
+            output.error = None
 
         return output
 
@@ -124,7 +154,7 @@ class OptionsUI(BaseUI):
         user_input: str = ''
         user_input = curses.keyname(win.getch()).decode()
         
-        output: UIResult = UIResult()
+        output: UIResult = UIResult(error = state.error)
         
         # ignore certain keypresses (e.g. curses.KEY_RESIZE)
         if user_input in KEY_IGNORE:
@@ -132,21 +162,14 @@ class OptionsUI(BaseUI):
         
         if user_input == KEY.bksp:
             output.ui = "main"
+            output.error = None
             return output
 
         try:
             output.action = OPTIONS_ACTIONS[user_input]
         except KeyError:
             output.error = Exception(f"invalid input {user_input}")
+        else:
+            output.error = None
         
         return output
-
-# class DummyUI(BaseUI):
-#     def draw(self, state) -> curses.window:
-#         return state.screen
-
-#     def run(self, state) -> UIResult:
-#         win = self.draw(state)
-#         user_input = curses.keyname(win.getch()).decode()
-#         output: UIResult = UIResult()
-#         return output
