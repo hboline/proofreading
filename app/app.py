@@ -81,12 +81,13 @@ class App():
             
         reader.activate()
         
+        c.save()
+        c.copy()
+        
         # process input based on function type
         word: str = ''
         match func_type:
             case FuncType.Default:
-                c.save()
-                c.copy()
                 word = c.get()
             case FuncType.NoCopy:
                 assert isinstance(func, partial)
@@ -115,6 +116,7 @@ class App():
             case PasteOption.Nothing:
                 return
         c.paste()
+        c.reset()
         
     def handle_result(self, result: UIResult):
         # check next UI
@@ -144,4 +146,4 @@ class App():
                         exit()
                     case "toggle convert english":
                         self.state.vars.convert_english ^= True
-                
+               

@@ -7,12 +7,15 @@ def ligature_parser(input: str) -> str:
     for k, v in LIGDICT.items():
         input = input.replace(k, v)
     return input
+
+
     
 class Clipboard():
     def __init__(self, value: str | None = None) -> None:
         # optionally set clipboard value
         if value is not None:
             self.value = value
+            self.set(self.value)
         else:
             self.value: str
             

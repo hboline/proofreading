@@ -11,7 +11,7 @@ def main(stdscr: curses.window):
     curses.init_pair(1, 245, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
 
-    app = App(stdscr)
+    app = App(stdscr, clipboard_value="[the]")
     app.run()
 
 if __name__ == "__main__":

@@ -22,6 +22,10 @@ LIGDICT = {
     '’': '\'',
     '{': '-', # this one is a little suspicious
     '−': '-',
+    # accented latin letters
+    '´e': 'é',
+    '¨o': 'ö',
+    '¨a': 'ä',
 }
 
 # common errors with defined fixes
@@ -36,6 +40,7 @@ COMERRDICT = {
     "that's": "that is",
     "let's": "let us",
     # other
+    "towards": "toward",
     "put": "set",
     "the sequel": "what follows",
     "combing": "combining",

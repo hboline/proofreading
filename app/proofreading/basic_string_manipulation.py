@@ -1,6 +1,7 @@
 import webbrowser
 
 from ..utils.constants import SYMBOLS
+from .helpers import is_acronym
     
 def delete_symbol(word: str, symbol_to_remove: str | None) -> str:
     if symbol_to_remove is None:
@@ -32,6 +33,10 @@ def pluralize(word: str) -> str:
     """Return pluralized form of word based on general heuristic rules.
     Cannot go from plural to singular, and will not work on some words.\n
     e.g. \"cand[y]\" -> \"cand[ies]\""""
+    
+    if is_acronym(word):
+        return word + 's'
+        
     last_1 = word[-1]
     last_2 = word[-2:]
     if last_2 in ['ss','ch','sh'] or last_1 in ['s','x','z']:
