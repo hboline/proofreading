@@ -106,6 +106,8 @@ class App():
             raise Exception("input is not string")
         except Exception as e:
             raise e
+        finally:
+            c.reset()
 
         # process function output based on paste type
         match paste_type:
