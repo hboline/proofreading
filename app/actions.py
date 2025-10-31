@@ -43,6 +43,7 @@ MAIN_ACTIONS = {
     'f': common_error_parser,
     'c': FuncContainer(partial(paster, ':'), FuncType.NoCopy, PasteOption.Raw),
     ',': "filesave",
+    '-': "clear history",
     KEY.esc: "exit",
 }
 

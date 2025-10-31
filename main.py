@@ -10,6 +10,7 @@ def main(stdscr: curses.window):
     curses.start_color()
     curses.init_pair(1, 245, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
     app = App(stdscr, clipboard_value="[the]")
     app.run()

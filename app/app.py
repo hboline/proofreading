@@ -1,9 +1,10 @@
 from dataclasses import dataclass, asdict
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 import os
 import inspect
 
 from functools import partial
+from typing_extensions import Tuple
 from pyautogui import hotkey
 import curses
 
@@ -23,6 +24,7 @@ class State():
     process_window: Window
     active_ui: Optional[BaseUI]
     error: Optional[Exception]
+    action_history: List[Tuple[str, Callable]]
     vars: Vars
 
 class App():
@@ -44,6 +46,7 @@ class App():
             process_window = Window(),
             active_ui = self.ui_map["main"],
             error = None,
+            action_history = [],
             vars = Vars(
                 convert_english = True,
             )
@@ -148,4 +151,6 @@ class App():
                         exit()
                     case "toggle convert english":
                         self.state.vars.convert_english ^= True
+                    case "clear history":
+                        self.state.action_history = []
                

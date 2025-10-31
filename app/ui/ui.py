@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 COLOR_GRAY = partial(curses.color_pair, 1)
 COLOR_RED = partial(curses.color_pair, 2)
+COLOR_GREEN = partial(curses.color_pair, 3)
 
 @dataclass
 class UIResult():
@@ -22,13 +23,26 @@ class UIResult():
 
 def _curses_add_lines(
     win: curses.window,
-    lines: List[str | Tuple[str, Callable]],
+    lines: (
+        List[str | Tuple[str, Callable[[], int]]] |
+        str |
+        Tuple[str, Callable[[], int]]
+    ),
     line_start: int = 0,
-):
+    wrap_x = False,
+) -> int:
+    if not isinstance(lines, list):
+        lines = [lines]
+    
+    line_number = 0
+    max_y, max_x = win.getmaxyx()
+    y_offset = 0
     for line_number, line in enumerate(lines):
         text: str = ''
         attr: int | Callable = 0
-        line_number += line_start
+        
+        line_number += line_start + y_offset
+        
         if isinstance(line, str):
             text = line
             attr = 0
@@ -39,9 +53,18 @@ def _curses_add_lines(
         try:
             assert isinstance(text, str)
             assert isinstance(attr, int)
+            
+            if wrap_x is False:
+                text = text[:max_x]
+            else:
+                y_offset += len(text)//max_x
+                text = text[:(max_y - line_number)*max_x]
+                
             win.addstr(line_number, 0, text, attr)
         except curses.error:
             pass
+
+    return line_number
 
 # base UI class all UIs will inherit from 
 class BaseUI:
@@ -54,26 +77,41 @@ class BaseUI:
         win = state.screen
         win.clear()
 
-        max_y, _ = win.getmaxyx()
+        max_y, max_x  = win.getmaxyx()
 
         # TODO: the "..."s aren't quite right; check ui
-        trunc: int = 0
+        trunc: int = 2
         sub_lines: List = self.lines.copy()
-        end_lines: List = []
+        end_lines: List = [("...",COLOR_GRAY)] + [sub_lines[-1]]
+        error_lines: List = []
+        history_lines: List = state.action_history
         if state.error is not None:
-            trunc = 3
-            sub_lines.extend(["",(state.error.args[0], COLOR_RED)])
-            end_lines = [("...",COLOR_GRAY)] + [sub_lines[-3],sub_lines[-1]]
-        elif state.error is None:
-            trunc = 2
-            end_lines = [("...",COLOR_GRAY)] + [sub_lines[-1]]
+            trunc += 1
+            error_lines = ["",(state.error.args[0], COLOR_RED)]
+            end_lines.extend([error_lines[-1]])
 
-        if max_y >= len(sub_lines):
-            _curses_add_lines(win, sub_lines)
+        if max_y > len(sub_lines):
+            error_trim = 1 if (max_y - len(sub_lines)) == 1 else 0
+            line_number = _curses_add_lines(win, sub_lines) + 1
+            if len(error_lines) > 0:
+                line_number = _curses_add_lines(win, error_lines[error_trim:], line_number, wrap_x=True)
+            if len(state.action_history) > 0:
+                line_number = _curses_add_lines(
+                    win, 
+                    ['History','─'*max_x],
+                    line_start = line_number
+                )
+                
+            _ = _curses_add_lines(
+                win,
+                [('▸'+line,func) for (line,func) in history_lines[:(max_y-line_number)]],
+                line_number+1,
+                wrap_x=True
+            )
         else:
             max_line = max_y-trunc
-            _curses_add_lines(win, sub_lines[:max_line])
-            _curses_add_lines(win,end_lines, max_line)
+            _ = _curses_add_lines(win, sub_lines[:max_line])
+            _ = _curses_add_lines(win, end_lines, max_line, wrap_x=True)
 
         win.move(0, 0)
         return win
@@ -125,6 +163,8 @@ class MainUI(BaseUI):
         except KeyError:
             output.error = Exception(f"invalid input {user_input}")
         else:
+            if output.action != "filesave":
+                state.action_history = [(f"{output.action}", COLOR_GREEN)] + state.action_history
             output.error = None
 
         return output
