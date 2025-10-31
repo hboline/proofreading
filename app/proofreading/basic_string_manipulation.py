@@ -1,7 +1,7 @@
 import webbrowser
 
-from ..utils.constants import SYMBOLS
-from .helpers import is_acronym
+from app.utils.constants import SYMBOLS
+from app.proofreading.helpers import is_acronym
     
 def delete_symbol(word: str, symbol_to_remove: str | None) -> str:
     if symbol_to_remove is None:
@@ -71,6 +71,8 @@ def flip_words(words: str) -> str:
     words = ' '.join(words.split()[::-1])
     return words
 
+# the next two functions are identical, but it's helpful for them 
+# to have different names (see: action.py, MAIN_OPTIONS)
 def paster(word: str) -> str:
     return word
 

@@ -1,33 +1,30 @@
 # ruff: noqa: F403, F405
-from dataclasses import dataclass
 from functools import partial
-from typing import Callable
-from enum import Enum, auto
+from typing import Callable, Dict
 
-from .proofreading import * 
-from .utils import KEY
+from app.proofreading import * 
+from app.utils import KEY, SpecialFunc, FuncContainer, PasteOption, FuncType, Action
 
-class PasteOption(Enum):
-    Bracketed = auto(),
-    Raw = auto(),
-    Nothing = auto(),
+def function_stringifier(
+    func: Action,
+    *args
+) -> str:
+    if isinstance(func, str):
+        return func
+    elif isinstance(func, SpecialFunc | FuncContainer):
+        func = func.func
+    else:
+        func = func
 
-class FuncType(Enum):
-    Default = auto(),
-    NoCopy = auto(),
+    func_name = str(func).split()[1]
+    args = [f"\"{arg}\"" if isinstance(arg, str) else arg for arg in args]
 
-@dataclass
-class SpecialFunc():
-    func: Callable
-    none_value: str
-
-@dataclass
-class FuncContainer:
-    func: Callable | SpecialFunc
-    func_type: FuncType = FuncType.Default
-    paste_type: PasteOption = PasteOption.Bracketed
-
-MAIN_ACTIONS = {
+    func_string = f"{func_name}" + \
+        (f"({', '.join(str(arg) for arg in args)})" if args else '')
+    
+    return func_string
+    
+MAIN_ACTIONS: Dict[str, str | Callable | SpecialFunc | FuncContainer] = {
     '1': hyphenate,
     '2': SpecialFunc(delete_symbol, '2'),
     '3': lower,
@@ -49,4 +46,5 @@ MAIN_ACTIONS = {
 
 OPTIONS_ACTIONS = {
     '1': "toggle convert english",
+    '2': "toggle show output",
 }

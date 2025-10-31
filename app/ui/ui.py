@@ -1,13 +1,11 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import List, Optional, Callable, TYPE_CHECKING, Tuple
+from typing import List, Callable, TYPE_CHECKING
 from functools import partial
 
 import curses
 
-from ..actions import MAIN_ACTIONS, OPTIONS_ACTIONS, FuncContainer
-from ..utils import KEY_IGNORE
-from app.utils.constants import KEY
+from app.actions import MAIN_ACTIONS, OPTIONS_ACTIONS
+from app.utils import KEY, KEY_IGNORE, Line, UIResult
 if TYPE_CHECKING:
     from app import State
 
@@ -15,22 +13,13 @@ COLOR_GRAY = partial(curses.color_pair, 1)
 COLOR_RED = partial(curses.color_pair, 2)
 COLOR_GREEN = partial(curses.color_pair, 3)
 
-@dataclass
-class UIResult():
-    ui: Optional[str] = None
-    action: Optional[str | Callable | FuncContainer] = None
-    error: Optional[Exception] = None
-
 def _curses_add_lines(
     win: curses.window,
-    lines: (
-        List[str | Tuple[str, Callable[[], int]]] |
-        str |
-        Tuple[str, Callable[[], int]]
-    ),
+    lines: Line | List[Line],
     line_start: int = 0,
     wrap_x = False,
 ) -> int:
+    """Line: str | Tuple[str, int] | Tuple[str, Callable[..., int]]"""
     if not isinstance(lines, list):
         lines = [lines]
     
@@ -68,7 +57,7 @@ def _curses_add_lines(
 
 # base UI class all UIs will inherit from 
 class BaseUI:
-    lines: List[str | Tuple[str, Callable]]
+    lines: List[Line]
     
     def run(self, state: State) -> UIResult:
         raise NotImplementedError
@@ -79,12 +68,11 @@ class BaseUI:
 
         max_y, max_x  = win.getmaxyx()
 
-        # TODO: the "..."s aren't quite right; check ui
         trunc: int = 2
         sub_lines: List = self.lines.copy()
         end_lines: List = [("...",COLOR_GRAY)] + [sub_lines[-1]]
         error_lines: List = []
-        history_lines: List = state.action_history
+        history_lines: List = [(action, COLOR_GREEN()) for action in state.action_history]
         if state.error is not None:
             trunc += 1
             error_lines = ["",(state.error.args[0], COLOR_RED)]
@@ -99,12 +87,12 @@ class BaseUI:
                 line_number = _curses_add_lines(
                     win, 
                     ['History','─'*max_x],
-                    line_start = line_number
+                    line_start = line_number + 1 + len(error_lines)//2
                 )
                 
-            _ = _curses_add_lines(
+            _curses_add_lines(
                 win,
-                [('▸'+line,func) for (line,func) in history_lines[:(max_y-line_number)]],
+                [('▸'+line,color) for (line,color) in history_lines[:(max_y-line_number)]],
                 line_number+1,
                 wrap_x=True
             )
@@ -163,8 +151,6 @@ class MainUI(BaseUI):
         except KeyError:
             output.error = Exception(f"invalid input {user_input}")
         else:
-            if output.action != "filesave":
-                state.action_history = [(f"{output.action}", COLOR_GREEN)] + state.action_history
             output.error = None
 
         return output
@@ -181,7 +167,11 @@ class OptionsUI(BaseUI):
             "[1] toggle EN/US conversion ["
             f"{"EN->US" if vars.convert_english else "US->EN"}]"
         )
-        win.addstr(1,0,"[bksp] return to main", COLOR_GRAY())
+        win.addstr(1, 0,
+            "[2] toggle history output ["
+            f"{"show" if vars.show_output else "hidden"}]"
+        )
+        win.addstr(2,0,"[bksp] return to main", COLOR_GRAY())
 
         if state.error:
             win.addstr(3, 0, state.error.args[0], COLOR_RED())

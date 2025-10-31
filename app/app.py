@@ -4,17 +4,17 @@ import os
 import inspect
 
 from functools import partial
-from typing_extensions import Tuple
 from pyautogui import hotkey
 import curses
 
-from .utils import Clipboard, Window
-from .ui import MainUI, OptionsUI, UIResult, BaseUI
-from .actions import FuncContainer, FuncType, PasteOption, SpecialFunc
+from app.utils import Clipboard, Window, FuncContainer, FuncType, PasteOption, SpecialFunc
+from app.ui import MainUI, OptionsUI, UIResult, BaseUI
+from app.actions import function_stringifier
 
 @dataclass
 class Vars():
     convert_english: bool
+    show_output: bool
 
 @dataclass
 class State():
@@ -24,7 +24,7 @@ class State():
     process_window: Window
     active_ui: Optional[BaseUI]
     error: Optional[Exception]
-    action_history: List[Tuple[str, Callable]]
+    action_history: List[str]
     vars: Vars
 
 class App():
@@ -49,13 +49,13 @@ class App():
             action_history = [],
             vars = Vars(
                 convert_english = True,
+                show_output = True,
             )
         )
 
     def run(self):
         while self.state.active_ui is not None:
             result = self.state.active_ui.run(self.state)
-            # self.state.error = None
             try:
                 self.handle_result(result)
             except Exception as e:
@@ -98,17 +98,22 @@ class App():
                 func = func.func
         
         vars_dict = asdict(self.state.vars)
-        func_args = inspect.signature(func).parameters.keys()
-        kwargs.update([(k,v) for k,v in vars_dict.items() if k in func_args])
+        func_kwargs = inspect.signature(func).parameters.keys()
+        kwargs.update([(k,v) for k,v in vars_dict.items() if k in func_kwargs])
         
         # process action function
         try:
-            assert isinstance(word, str)
             result = func(word, *args, **kwargs)
         except AssertionError:
             raise Exception("input is not string")
         except Exception as e:
             raise e
+        else:
+            args.insert(0, word)
+            self.state.action_history.insert(0, 
+                f"{function_stringifier(func, *args)}" + \
+                (f" -> \"{result}\"" if result and self.state.vars.show_output else '')
+            )
         finally:
             c.reset()
 
@@ -151,6 +156,8 @@ class App():
                         exit()
                     case "toggle convert english":
                         self.state.vars.convert_english ^= True
+                    case "toggle show output":
+                        self.state.vars.show_output ^= True
                     case "clear history":
                         self.state.action_history = []
                

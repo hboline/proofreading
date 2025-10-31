@@ -1,6 +1,6 @@
 from typing import Callable
 
-from ..utils.constants import COMERRDICT, ABBVDICT, EN2AMDICT
+from app.utils.constants import COMERRDICT, ABBVDICT, EN2AMDICT
 
 def consume_dict(
     input: str,
