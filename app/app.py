@@ -79,22 +79,23 @@ class App():
             else:
                 args.append(input)
         
+        if func_type is FuncType.Super:
+            func(self)
+            return
+        
+        reader.activate()
+        c.copy()
         c.save()
        
         # process input based on function type
         word: str = ''
         match func_type:
             case FuncType.Default:
-                reader.activate()
-                c.copy()
                 word = c.get()
             case FuncType.NoCopy:
                 assert isinstance(func, partial)
                 word = func.args[0]
                 func = func.func
-            case FuncType.Super:
-                func(self) # I could also just "try except" this
-                return     # instead of FuncType.Super
         
         func_kwargs = {k:str(v.annotation) for k,v in inspect.signature(func).parameters.items()}
         for k,v in func_kwargs.items():
