@@ -1,13 +1,11 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Callable, List, Optional
-import os
 import inspect
 
 from functools import partial
-from pyautogui import hotkey
 import curses
 
-from app.utils import Clipboard, Window, FuncContainer, FuncType, PasteOption, SpecialFunc
+from app.utils import Clipboard, Window, FuncContainer, FuncType, PasteOption
 from app.ui import MainUI, OptionsUI, UIResult, BaseUI
 from app.actions import function_stringifier
 
@@ -65,68 +63,72 @@ class App():
         func = FC.func
         func_type = FC.func_type
         paste_type = FC.paste_type
+        is_special = FC.special
+        special_default = FC.special_default
 
         args = list()
         kwargs = dict()
         
         reader = self.state.reader_window
         c = self.state.clipboard
-        
-        # TODO: not a big fan of this. a better version would loop to a new ui
-        if isinstance(func, SpecialFunc):
-            none_value = func.none_value
-            func = func.func
+       
+        if is_special is True:
             input = curses.keyname(self.state.screen.getch()).decode()
-            if input == none_value:
+            if input == special_default:
                 args.append(None)
             else:
                 args.append(input)
-            
-        reader.activate()
         
         c.save()
-        c.copy()
-        
+       
         # process input based on function type
         word: str = ''
         match func_type:
             case FuncType.Default:
+                reader.activate()
+                c.copy()
                 word = c.get()
             case FuncType.NoCopy:
                 assert isinstance(func, partial)
                 word = func.args[0]
                 func = func.func
+            case FuncType.Super:
+                func(self) # I could also just "try except" this
+                return     # instead of FuncType.Super
         
-        vars_dict = asdict(self.state.vars)
-        func_kwargs = inspect.signature(func).parameters.keys()
-        kwargs.update([(k,v) for k,v in vars_dict.items() if k in func_kwargs])
+        func_kwargs = {k:str(v.annotation) for k,v in inspect.signature(func).parameters.items()}
+        for k,v in func_kwargs.items():
+            if v == 'State':
+                kwargs[k] = self.state
         
         # process action function
         try:
             result = func(word, *args, **kwargs)
         except AssertionError:
+            c.reset()
             raise Exception("input is not string")
         except Exception as e:
+            c.reset()
             raise e
         else:
             args.insert(0, word)
+            
             self.state.action_history.insert(0, 
                 f"{function_stringifier(func, *args)}" + \
                 (f" -> \"{result}\"" if result and self.state.vars.show_output else '')
             )
-        finally:
+            
+            # process function output based on paste type
+            match paste_type:
+                case PasteOption.Bracketed:
+                    c.set(f"[{result}]")
+                case PasteOption.Raw:
+                    c.set(result)
+                case PasteOption.Nothing:
+                    c.reset()
+                    return
+            c.paste()
             c.reset()
-
-        # process function output based on paste type
-        match paste_type:
-            case PasteOption.Bracketed:
-                c.set(f"[{result}]")
-            case PasteOption.Raw:
-                c.set(result)
-            case PasteOption.Nothing:
-                return
-        c.paste()
-        c.reset()
         
     def handle_result(self, result: UIResult):
         # check next UI
@@ -141,23 +143,8 @@ class App():
 
         # check for actions
         if result.action:
-            if isinstance(result.action, Callable | SpecialFunc):
+            if isinstance(result.action, Callable):
                 self.process_action(FuncContainer(result.action))
             elif isinstance(result.action, FuncContainer):
                 self.process_action(result.action)
-            elif isinstance(result.action, str):
-                match result.action:
-                    case "filesave":
-                        self.state.reader_window.activate()
-                        hotkey("ctrl","s")
-                    case "exit":
-                        curses.endwin()
-                        os.system("cls")
-                        exit()
-                    case "toggle convert english":
-                        self.state.vars.convert_english ^= True
-                    case "toggle show output":
-                        self.state.vars.show_output ^= True
-                    case "clear history":
-                        self.state.action_history = []
                

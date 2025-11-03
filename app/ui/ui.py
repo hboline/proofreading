@@ -128,12 +128,18 @@ class MainUI(BaseUI):
         ("[`] options", COLOR_GRAY),
         ("[esc] exit", COLOR_GRAY),
     ]
+
+    def draw(self, state) -> curses.window:
+        win = super().draw(state)
+        return win
    
     def run(self, state) -> UIResult:
         win = self.draw(state)
         
         user_input: str = ''
+
         user_input = curses.keyname(win.getch()).decode()
+        curses.flushinp()
         
         output: UIResult = UIResult(error = state.error)
         

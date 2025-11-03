@@ -20,9 +20,9 @@ def hyphenate(word: str) -> str:
         word = new
     return word
 
-def upper(word: str) -> str:
-    word = word.title()
-    return word
+def upper(words: str) -> str:
+    words = ' '.join(word[0].upper() + word[1:] for word in words.split())
+    return words
 
 def lower(word: str) -> str:
     word = word.lower()

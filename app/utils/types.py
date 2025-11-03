@@ -10,20 +10,22 @@ class PasteOption(Enum):
 class FuncType(Enum):
     Default = auto(),
     NoCopy = auto(),
-
-@dataclass
-class SpecialFunc():
-    func: Callable
-    none_value: str
+    Super = auto(),
 
 @dataclass
 class FuncContainer:
-    func: Callable | SpecialFunc
+    func: Callable
     func_type: FuncType = FuncType.Default
     paste_type: PasteOption = PasteOption.Bracketed
+    special: bool = False
+    special_default: Optional[str] = None
+
+    def __post_init__(self):
+        if self.special is True:
+            assert self.special_default is not None
     
 Line: TypeAlias = str | Tuple[str, int] | Tuple[str, Callable[..., int]]
-Action: TypeAlias = str | Callable | FuncContainer | SpecialFunc
+Action: TypeAlias = Callable | FuncContainer
 
 @dataclass
 class UIResult():

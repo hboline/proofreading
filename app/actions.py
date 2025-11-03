@@ -2,18 +2,17 @@
 from functools import partial
 from typing import Callable, Dict
 
+from app.helpers import *
 from app.proofreading import * 
-from app.utils import KEY, SpecialFunc, FuncContainer, PasteOption, FuncType, Action
+from app.utils import KEY, FuncContainer, PasteOption, FuncType, Action
 
 def function_stringifier(
     func: Action,
     *args
 ) -> str:
-    if isinstance(func, str):
-        return func
-    elif isinstance(func, SpecialFunc | FuncContainer):
+    if isinstance(func, FuncContainer):
         func = func.func
-    else:
+    elif isinstance(func, Callable):
         func = func
 
     func_name = str(func).split()[1]
@@ -24,9 +23,9 @@ def function_stringifier(
     
     return func_string
     
-MAIN_ACTIONS: Dict[str, str | Callable | SpecialFunc | FuncContainer] = {
+MAIN_ACTIONS: Dict[str, Action] = {
     '1': hyphenate,
-    '2': SpecialFunc(delete_symbol, '2'),
+    '2': FuncContainer(delete_symbol, special = True, special_default='2'),
     '3': lower,
     '4': upper,
     '9': FuncContainer(look_up_word, FuncType.Default, PasteOption.Nothing),
@@ -39,12 +38,13 @@ MAIN_ACTIONS: Dict[str, str | Callable | SpecialFunc | FuncContainer] = {
     'd': past_tensifier_simple,
     'f': common_error_parser,
     'c': FuncContainer(partial(paster, ':'), FuncType.NoCopy, PasteOption.Raw),
-    ',': "filesave",
-    '-': "clear history",
-    KEY.esc: "exit",
+    ',': FuncContainer(filesave, FuncType.Super),
+    '-': FuncContainer(clear_history, FuncType.Super),
+    KEY.esc: FuncContainer(close_app, FuncType.Super),
 }
 
 OPTIONS_ACTIONS = {
-    '1': "toggle convert english",
-    '2': "toggle show output",
+    '1': FuncContainer(toggle_convert_english, FuncType.Super),
+    '2': FuncContainer(toggle_show_output, FuncType.Super),
 }
+

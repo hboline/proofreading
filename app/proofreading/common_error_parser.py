@@ -1,4 +1,7 @@
-from typing import Callable
+from __future__ import annotations
+from typing import Callable, TYPE_CHECKING
+if TYPE_CHECKING:
+    from app import State
 
 from app.utils.constants import COMERRDICT, ABBVDICT, EN2AMDICT
 
@@ -54,7 +57,9 @@ def number_fixer(input: str) -> str:
         else:
             raise Exception("number too short")
 
-def common_error_parser(input: str, convert_english) -> str:
+def common_error_parser(input: str, state: State) -> str:
+    convert_english = state.vars.convert_english
+
     # check if the input is a number and add comma if necessary
     # raises error if the number is fewer than 5 digits
     try:

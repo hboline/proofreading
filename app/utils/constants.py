@@ -72,6 +72,7 @@ ABBVDICT = {
     "eq.": "eq",
     "eqs.": "eqs",
     "fig.": "figure",
+    "tab.": "table",
 }
 
 # english -> american conversion
@@ -99,6 +100,7 @@ EN2AMDICT = {
     "centre": "center",
     "travell": "travel",
     "favour": "favor",
+    "analys": "analyz",
 }
 
 

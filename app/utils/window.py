@@ -22,11 +22,13 @@ class Window():
             except IndexError:
                 raise Exception(f"Window: error finding window with {partial_name} in title")
 
+    # maybe this needs an await or something? idk
     def activate(self):
         self._handle.activate()
+        # assert self.is_active()
 
     def is_active(self):
-        self._handle.isActive
+        return self._handle.isActive
 
     def set_window(self):
         self._handle = getActiveWindowNotNone()
