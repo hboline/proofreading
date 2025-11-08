@@ -19,11 +19,13 @@ def function_stringifier(
     args = [f"\"{arg}\"" if isinstance(arg, str) else arg for arg in args]
 
     func_string = f"{func_name}" + \
-        (f"({', '.join(str(arg) for arg in args)})" if args else '')
+        (f"({', '.join(str(arg) for arg in args)})" if (args and args != ['\"\"']) else '')
     
     return func_string
     
 MAIN_ACTIONS: Dict[str, Action] = {
+    KEY.tab: FuncContainer(manual_input, FuncType.Super),
+    '/': FuncContainer(manual_input, FuncType.Super),
     '1': hyphenate,
     '2': FuncContainer(delete_symbol, special = True, special_default='2'),
     '3': lower,

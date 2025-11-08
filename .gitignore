@@ -2,6 +2,7 @@
 .git/
 
 # python stuff
+.venv
 .pyc
 __pycache__/
 

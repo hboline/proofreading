@@ -3,6 +3,7 @@ from types import SimpleNamespace
 KEY = SimpleNamespace({
     "esc": '^[',
     "bksp": '^H',
+    "tab": '^I',
 })
 
 KEY_IGNORE = {
@@ -66,13 +67,13 @@ COMERRDICT = {
 # note: subsets (e.g. eq is in eqs) need to come first
 ABBVDICT = {
     # abbreviations
-    "sec.": "section",
-    "thrm": "theorem",
-    "thm.": "theorem",
-    "eq.": "eq",
-    "eqs.": "eqs",
-    "fig.": "figure",
-    "tab.": "table",
+    "sec.": "Section",
+    "thrm": "Theorem",
+    "thm.": "Theorem",
+    "eq.": "Eq",
+    "eqs.": "Eqs",
+    "fig.": "Figure",
+    "tab.": "Table",
 }
 
 # english -> american conversion
