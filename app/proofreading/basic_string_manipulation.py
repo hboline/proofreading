@@ -68,7 +68,15 @@ def past_tensifier_simple(word: str) -> str:
         return word + "ed"
 
 def flip_words(words: str) -> str:
-    words = ' '.join(words.split()[::-1])
+    words_list = words.split()
+    if len(words_list) <= 1:
+        raise Exception("not enough words to reverse")
+    first_word = words_list[0]
+    last_word = words_list[-1]
+    if first_word.istitle() and not is_acronym(first_word):
+        words_list[-1] = last_word.title()
+        words_list[0] = first_word.lower()
+    words = ' '.join(words_list[::-1])
     return words
 
 # the next two functions are identical, but it's helpful for them 
