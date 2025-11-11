@@ -37,4 +37,6 @@ class Clipboard():
         pag.hotkey('ctrl','c')
     
     def paste(self):
+        pag.hotkey('shift')
         pag.hotkey('ctrl','v')
+
