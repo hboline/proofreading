@@ -1,4 +1,5 @@
 import webbrowser
+import re
 
 from app.utils.constants import SYMBOLS
 from app.proofreading.helpers import is_acronym
@@ -30,10 +31,31 @@ def lower(word: str) -> str:
 
 VOWELS = "aeiou"
 def pluralize(word: str) -> str:
-    """Return pluralized form of word based on general heuristic rules.
-    Cannot go from plural to singular, and will not work on some words.\n
-    e.g. \"cand[y]\" -> \"cand[ies]\""""
+    """
+        Return pluralized (or depluralized) form of word based
+        on general heuristic rules. May not always work correctly,
+        and will not work on some words entirely.
     
+        e.g. \"cand[y]\" -> \"cand[ies]\"
+             \"defin[es]\" -> \"defin[e]\"
+    """
+
+    # check if word is already plural
+    re_match = re.search("..s$", word)
+    if re_match is not None:
+        end = re_match.group() 
+        if end == 'ies':
+            return word.rstrip(end) + 'y'
+        elif end == 'ves':
+            return word.rstrip(end) + 'fe' if word[-1] in VOWELS else 'f'
+        elif end[-2:] == 'es':
+            word = word.rstrip('es')
+            cond = word[-2:] in ['ss','ch','sh'] or word[-1] in ['s','x','z']
+            return word + 'e' if cond else ''
+        elif end[-1] == 's':
+            return word[:-1]
+    
+    # now attempt to pluralize the word
     if is_acronym(word):
         return word + 's'
         
@@ -48,10 +70,14 @@ def pluralize(word: str) -> str:
     else:
         return word + 's'
 
-def past_tensifier_simple(word: str) -> str:
-    """Return past-tense of present-tense word based on general heuristic rules.
-    Cannot go from past-tense to present-tense.\n
-    e.g. \"pani[c]\" -> \"pani[cked]\""""
+def to_past_tense(word: str) -> str:
+    """
+        Return past-tense of present-tense word based on
+        general heuristic rules. Cannot go from past-tense
+        to present-tense.
+        
+        e.g. \"pani[c]\" -> \"pani[cked]\"
+    """
     if word[-1] == 'e':
         return word + 'd'
     elif word[-1] == 'y' and word[-2] not in VOWELS:
@@ -66,6 +92,29 @@ def past_tensifier_simple(word: str) -> str:
         return word + word[-1] + "ed"
     else:
         return word + "ed"
+
+def to_present_participle(word: str) -> str:
+    """
+        Return present participle of present-tense word based
+        on general heuristic rules. Cannot go from present
+        participle to present-tense. Words such as "beginning"
+        will not conjugate properly.
+        
+        e.g. \"hop\" -> \"hop[ping]\"
+             \"hop[e]\" -> \"hop[ing]\"
+    """
+    if word[-1] == 'e':
+        word = word.rstrip('e')
+    elif word[-2:] == 'ie':
+        word = word.rstrip('ie') + 'y'
+    elif (
+        sum(letter in VOWELS for letter in word) == 1 and
+        word[-1] not in VOWELS
+    ):
+        word += word[-1]
+
+    return word + 'ing'
+        
 
 def flip_words(words: str) -> str:
     words_list = words.split()

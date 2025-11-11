@@ -1,6 +1,11 @@
 from enum import Enum, auto
 
 def is_acronym(input: str):
+    """
+        Check if the word is an acronym.
+        
+        e.g. "is_acronym("NASA") = True"
+    """
     return all(letter.isupper() for letter in input)
 
 class Case(Enum):
