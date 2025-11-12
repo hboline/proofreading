@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "pyautogui>=0.9.54",
     "pyperclip>=1.11.0",
+    "pytest>=9.0.0",
     "windows-curses>=2.4.1",
 ]
 
@@ -15,10 +16,6 @@ proofreading = "proofreading.__main__:main"
 
 [tool.uv]
 package = true
-
-# [tool.uv.build-backend]
-# module-name = "src"
-# module-root = ""
 
 [tool.ruff.lint]
 ignore = [ "F401", "F403"]
