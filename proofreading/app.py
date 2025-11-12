@@ -5,9 +5,9 @@ import inspect
 from functools import partial
 import curses
 
-from app.utils import Clipboard, Window, FuncContainer, FuncType, PasteOption
-from app.ui import MainUI, OptionsUI, UIResult, BaseUI
-from app.actions import function_stringifier
+from .utils import Clipboard, Window, FuncContainer, FuncType, PasteOption, UIResult
+from .ui import MainUI, OptionsUI, BaseUI
+from .actions import function_stringifier
 
 @dataclass
 class Vars():

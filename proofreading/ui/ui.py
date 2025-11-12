@@ -4,8 +4,8 @@ from functools import partial
 
 import curses
 
-from app.actions import MAIN_ACTIONS, OPTIONS_ACTIONS
-from app.utils import KEY, KEY_IGNORE, Line, UIResult
+from ..actions import MAIN_ACTIONS, OPTIONS_ACTIONS
+from ..utils import KEY, KEY_IGNORE, Line, UIResult
 if TYPE_CHECKING:
     from app import State
 

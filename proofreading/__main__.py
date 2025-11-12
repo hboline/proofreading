@@ -1,8 +1,8 @@
 import curses
 
-from app import App
+from .app import App
 
-def main(stdscr: curses.window):
+def run(stdscr: curses.window):
     curses.curs_set(0)
     stdscr.keypad(True)
     stdscr.scrollok(False)
@@ -15,5 +15,8 @@ def main(stdscr: curses.window):
     app = App(stdscr, clipboard_value="[the]")
     app.run()
 
+def main():
+    curses.wrapper(run)
+
 if __name__ == "__main__":
-    curses.wrapper(main)
+    main()

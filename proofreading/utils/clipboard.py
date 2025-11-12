@@ -1,7 +1,7 @@
 import pyperclip as ppc
 import pyautogui as pag
 
-from app.utils.constants import LIGDICT
+from .constants import LIGDICT
 
 def ligature_parser(input: str) -> str:
     for k, v in LIGDICT.items():

@@ -3,7 +3,7 @@ from typing import Callable, TYPE_CHECKING
 if TYPE_CHECKING:
     from app import State
 
-from app.utils.constants import COMERRDICT, ABBVDICT, EN2AMDICT
+from ..utils.constants import COMERRDICT, ABBVDICT, EN2AMDICT
 
 def consume_dict(
     input: str,

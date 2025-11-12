@@ -2,9 +2,9 @@
 from functools import partial
 from typing import Callable, Dict
 
-from app.helpers import *
-from app.proofreading import * 
-from app.utils import KEY, FuncContainer, PasteOption, FuncType, Action
+from .helpers import *
+from .prooftools import * 
+from .utils import KEY, FuncContainer, PasteOption, FuncType, Action
 
 def function_stringifier(
     func: Action,
