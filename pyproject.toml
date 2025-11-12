@@ -17,6 +17,9 @@ proofreading = "proofreading.__main__:main"
 [tool.uv]
 package = true
 
+[tool.uv.build-backend]
+module-root = "src"
+
 [tool.ruff.lint]
 ignore = [ "F401", "F403"]
 
