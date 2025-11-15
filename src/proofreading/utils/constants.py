@@ -102,6 +102,7 @@ EN2AMDICT = {
     "travell": "travel",
     "favour": "favor",
     "analys": "analyz",
+    "discretis": "discretiz",
 }
 
 

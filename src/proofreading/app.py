@@ -1,5 +1,5 @@
-from dataclasses import dataclass, astuple
-from typing import Callable, List, Optional
+from dataclasses import dataclass, astuple, field
+from typing import Callable, Dict, List, Optional
 import inspect
 
 from functools import partial
@@ -23,8 +23,12 @@ class State():
     active_ui: Optional[BaseUI]
     error: Optional[Exception]
     action_history: List[str]
-    vars: Vars
-
+    session_rules: Dict[str, str] = field(default_factory=dict)
+    vars: Vars = field(default_factory=lambda: Vars(
+       convert_english=True,
+       show_output=True,
+   ))
+    
 class App():
     ui_map = {
         "main": MainUI(),
@@ -45,10 +49,6 @@ class App():
             active_ui = self.ui_map["main"],
             error = None,
             action_history = [],
-            vars = Vars(
-                convert_english = True,
-                show_output = True,
-            )
         )
 
     def run(self):

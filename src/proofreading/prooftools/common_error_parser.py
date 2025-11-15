@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING, Dict
 if TYPE_CHECKING:
     from app import State
 
@@ -44,6 +44,13 @@ def en2amdict_func(input: str, convert_english: bool = True) -> str:
             return output
     return input
 
+def session_rules_func(input: str, session_rules: Dict[str,str]) -> str:
+    for k, v in session_rules.items():
+        output = input.replace(k, v)
+        if not (output == input):
+            return output
+    return input
+
 def number_fixer(input: str) -> str:
     input = input.replace(' ','')
     if ',' in input:
@@ -82,6 +89,7 @@ def common_error_parser(input: str, state: State) -> str:
         (en2amdict_func, [convert_english]),
         (comerrdict_func, []),
         (abbvdict_func, []),
+        (session_rules_func, [state.session_rules]),
     ]
     for func, args in dictList:
         output, flag = consume_dict(input, func, *args)

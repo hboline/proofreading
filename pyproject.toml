@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-proofreading = "proofreading.__main__:main"
+proofread = "proofreading.__main__:main"
 
 [tool.uv]
 package = true

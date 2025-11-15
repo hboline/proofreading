@@ -108,6 +108,7 @@ class MainUI(BaseUI):
     lines = [
         "Choose option: ",
         "[tab] manual input",
+        "[;] add rule",
         "[1] hyphenate",
         "[2] delete symbol",
         "[3] lowercase",

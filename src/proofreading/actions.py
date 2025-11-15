@@ -25,7 +25,7 @@ def function_stringifier(
     
 MAIN_ACTIONS: Dict[str, Action] = {
     KEY.tab: FuncContainer(manual_input, FuncType.Super),
-    '/': FuncContainer(manual_input, FuncType.Super),
+    ';': FuncContainer(add_session_rule, FuncType.Super),
     '1': hyphenate,
     '2': FuncContainer(delete_symbol, special = True, special_default='2'),
     '3': lower,

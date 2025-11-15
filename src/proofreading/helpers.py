@@ -38,12 +38,12 @@ def _textbox_validator(ch: int) -> int:
 
 def manual_input(self: App) -> str:
     win = self.state.screen
-    win.addstr(1,0,"[tab] manual input: ", COLOR_GREEN())
+    win.addstr(1, 0,"[tab] manual input: ", COLOR_GREEN())
     curses.curs_set(2)
 
     _, max_x = win.getmaxyx()
 
-    subwin = curses.newwin(4,max_x-20,1,20)
+    subwin = curses.newwin(4, max_x-20, 1, 20)
     box = Textbox(subwin)
     
     win.refresh()
@@ -57,3 +57,39 @@ def manual_input(self: App) -> str:
     curses.curs_set(0)
     
     return input
+
+def add_session_rule(self: App):
+    win = self.state.screen
+    win.addstr(2, 0, "set rule key: ", COLOR_GREEN())
+    curses.curs_set(2)
+
+    _, max_x = win.getmaxyx()
+
+    subwin_key = curses.newwin(1, max_x-14, 2, 14)
+    box_key = Textbox(subwin_key)
+    
+    win.refresh()
+
+    box_key.edit(_textbox_validator)
+    key_input = box_key.gather().replace('\n','').rstrip()
+    
+    if key_input == '':
+        raise Exception("no text entered in key")
+    
+    win.addstr(3, 0, "   set value: ", COLOR_GREEN())
+
+    subwin_value = curses.newwin(1, max_x-14, 3, 14)
+    box_value = Textbox(subwin_value)
+
+    win.refresh()
+
+    box_value.edit(_textbox_validator)
+    value_input = box_value.gather().replace('\n','').rstrip()
+    
+    if value_input == '':
+        raise Exception("no text entered in value")
+
+    self.state.session_rules.update({key_input: value_input})
+
+    curses.curs_set(0)
+    

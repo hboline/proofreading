@@ -48,10 +48,11 @@ def pluralize(word: str) -> str:
             return word.rstrip(end) + 'y'
         elif end == 'ves':
             return word.rstrip(end) + 'fe' if word[-1] in VOWELS else 'f'
-        elif end[-2:] == 'es':
-            word = word.rstrip('es')
-            cond = word[-2:] in ['ss','ch','sh'] or word[-1] in ['s','x','z']
-            return word + 'e' if cond else ''
+        elif (end[-2:] == 'es' and (
+                    word.rstrip(end)[-2:] in ['ss','ch','sh'] or
+                    word.rstrip(end)[-1] in ['s','x','z'])
+            ):
+            return word.rstrip('s')
         elif end[-1] == 's':
             return word[:-1]
     
@@ -109,7 +110,7 @@ def to_present_participle(word: str) -> str:
         word = word.rstrip('ie') + 'y'
     elif (
         sum(letter in VOWELS for letter in word) == 1 and
-        word[-1] not in VOWELS
+        word[-1] not in (VOWELS + 'x')
     ):
         word += word[-1]
 

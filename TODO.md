@@ -1,4 +1,5 @@
 ﻿## TODO
+* add a chaining option (i.e. press space to chain, type e.g. "13r", press space to send)
 * implement logging
 * allow UI to send keypress to app that are held until some state is reached in the app (*what did I mean by this*)
 * add a microsoft word mode (ugh)
