@@ -1,13 +1,16 @@
+from __future__ import annotations
 from dataclasses import dataclass, astuple, field
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, TYPE_CHECKING
 import inspect
-
 from functools import partial
+
 import curses
 
-from .utils import Clipboard, Window, FuncContainer, FuncType, PasteOption, UIResult
-from .ui import MainUI, OptionsUI, BaseUI
-from .actions import function_stringifier
+from .utils import FuncContainer, FuncType, PasteOption
+from .actions import MAIN_ACTIONS, function_stringifier
+from ..utils import Clipboard, Window
+if TYPE_CHECKING:
+    from ..ui import UIResult
 
 @dataclass
 class Vars():
@@ -20,7 +23,7 @@ class State():
     clipboard: Clipboard
     reader_window: Window
     process_window: Window
-    active_ui: Optional[BaseUI]
+    active_ui: Optional[str]
     error: Optional[Exception]
     action_history: List[str]
     session_rules: Dict[str, str] = field(default_factory=dict)
@@ -30,30 +33,28 @@ class State():
    ))
     
 class App():
-    ui_map = {
-        "main": MainUI(),
-        "options": OptionsUI(),
-    }
-    
     def __init__(
         self,
         stdscr,
         reader_window_name: str = "adobe",
         clipboard_value: str | None = None,
     ):
+        from ..ui import activate_ui
+        self.activate_ui = activate_ui
+        
         self.state = State(
             screen = stdscr,
             clipboard = Clipboard(clipboard_value),
             reader_window = Window(reader_window_name),
             process_window = Window(),
-            active_ui = self.ui_map["main"],
+            active_ui = "main",
             error = None,
             action_history = [],
         )
 
     def run(self):
         while self.state.active_ui is not None:
-            result = self.state.active_ui.run(self.state)
+            result = self.activate_ui(self.state.active_ui, self.state)
             try:
                 self.handle_result(result)
             except Exception as e:
@@ -104,7 +105,7 @@ class App():
                 word = func.args[0]
                 func = func.func
             case FuncType.Super:
-                result = func(self) # NOTE: might need a better way to handle this
+                result = func(self.state) # NOTE: might need a better way to handle this
                 if result is None:
                     return
         
@@ -120,9 +121,6 @@ class App():
         try:
             if func_type is not FuncType.Super:
                 result = func(word, *args, **kwargs)
-            assert result is not None
-        except AssertionError:
-            raise Exception("input is not a string")
         except Exception as e:
             raise e
         finally:
@@ -144,14 +142,14 @@ class App():
             case PasteOption.Bracketed:
                 c.set(f"[{result}]")
             case PasteOption.Raw:
-                c.set(result)
+                c.set(f"{result}")
         c.paste()
         c.reset()
         
     def handle_result(self, result: UIResult):
         # check next UI
         if result.ui:
-            self.state.active_ui = self.ui_map[result.ui]
+            self.handle_result(self.activate_ui(result.ui, self.state))
         
         # check for error
         if result.error:
@@ -160,9 +158,14 @@ class App():
             self.state.error = None
 
         # check for actions
-        if result.action:
-            if isinstance(result.action, Callable):
-                self.process_action(FuncContainer(result.action))
-            elif isinstance(result.action, FuncContainer):
-                self.process_action(result.action)
+        if result.user_input:
+            try:
+                action = MAIN_ACTIONS[result.user_input]
+            except KeyError:
+                self.state.error = Exception(f"invalid input {result.user_input}")
+            else:
+                if isinstance(action, Callable):
+                    self.process_action(FuncContainer(action))
+                elif isinstance(action, FuncContainer):
+                    self.process_action(action)
                

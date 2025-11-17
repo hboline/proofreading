@@ -1,7 +1,8 @@
 from __future__ import annotations
 from typing import Callable, TYPE_CHECKING, Dict
+
 if TYPE_CHECKING:
-    from app import State
+    from ..controller.app import State
 
 from ..utils.constants import COMERRDICT, ABBVDICT, EN2AMDICT
 

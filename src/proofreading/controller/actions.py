@@ -1,10 +1,13 @@
 # ruff: noqa: F403, F405
 from functools import partial
-from typing import Callable, Dict
+from typing import Callable, Dict, TypeAlias
 
-from .helpers import *
-from .prooftools import * 
-from .utils import KEY, FuncContainer, PasteOption, FuncType, Action
+from .utils import FuncType, FuncContainer, PasteOption
+from .state_ops import *
+from ..utils import KEY
+from ..prooftools import *
+
+Action: TypeAlias = Callable | FuncContainer
 
 def function_stringifier(
     func: Action,
@@ -24,8 +27,8 @@ def function_stringifier(
     return func_string
     
 MAIN_ACTIONS: Dict[str, Action] = {
-    KEY.tab: FuncContainer(manual_input, FuncType.Super),
-    ';': FuncContainer(add_session_rule, FuncType.Super),
+    # KEY.tab: FuncContainer(manual_input, FuncType.Super),
+    # ';': FuncContainer(add_session_rule, FuncType.Super),
     '1': hyphenate,
     '2': FuncContainer(delete_symbol, special = True, special_default='2'),
     '3': lower,

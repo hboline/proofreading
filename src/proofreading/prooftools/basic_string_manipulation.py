@@ -2,7 +2,7 @@ import webbrowser
 import re
 
 from ..utils.constants import SYMBOLS
-from ..prooftools.helpers import is_acronym
+from .utils import is_acronym
     
 def delete_symbol(word: str, symbol_to_remove: str | None) -> str:
     if symbol_to_remove is None:
