@@ -120,9 +120,6 @@ class App():
         try:
             if func_type is not FuncType.Super:
                 result = func(word, *args, **kwargs)
-            assert result is not None
-        except AssertionError:
-            raise Exception("input is not a string")
         except Exception as e:
             raise e
         finally:
@@ -144,7 +141,7 @@ class App():
             case PasteOption.Bracketed:
                 c.set(f"[{result}]")
             case PasteOption.Raw:
-                c.set(result)
+                c.set(f"{result}")
         c.paste()
         c.reset()
         
