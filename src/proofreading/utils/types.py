@@ -23,13 +23,12 @@ class FuncContainer:
     def __post_init__(self):
         if self.special is True:
             assert self.special_default is not None
-    
+
 Line: TypeAlias = str | Tuple[str, int] | Tuple[str, Callable[..., int]]
 Action: TypeAlias = Callable | FuncContainer
 
 @dataclass
 class UIResult():
     ui: Optional[str] = None
-    action: Optional[Action] = None
+    action: Optional[FuncContainer] = None
     error: Optional[Exception] = None
-    

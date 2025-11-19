@@ -1,7 +1,8 @@
 from __future__ import annotations
 from typing import List, TYPE_CHECKING
 
-from .utils import UIResult, Line, COLOR_GRAY, COLOR_RED, COLOR_GREEN, curses_add_lines
+from .utils import COLOR_GRAY, COLOR_RED, COLOR_GREEN, curses_add_lines
+from ..utils import UIResult, Line
 
 if TYPE_CHECKING:
     from ..controller import State
@@ -36,19 +37,19 @@ class BaseUI:
             line_number = curses_add_lines(win, sub_lines) + 1
             if len(error_lines) > 0:
                 line_number = curses_add_lines(win, error_lines[error_trim:], line_number, wrap_x=True)
-            if len(state.action_history) > 0:
+            if len(history_lines) > 0 and state.vars.show_output:
                 line_number = curses_add_lines(
                     win, 
                     ['History','─'*max_x],
                     line_start = line_number + 1 + len(error_lines)//2
                 )
                 
-            curses_add_lines(
-                win,
-                [('▸'+line,color) for (line,color) in history_lines[:(max_y-line_number)]],
-                line_number+1,
-                wrap_x=True
-            )
+                curses_add_lines(
+                    win,
+                    [('▸'+line,color) for (line,color) in history_lines[:(max_y-line_number)]],
+                    line_number+1,
+                    wrap_x=True
+                )
         else:
             max_line = max_y-trunc
             _ = curses_add_lines(win, sub_lines[:max_line])

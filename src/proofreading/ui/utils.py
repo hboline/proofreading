@@ -1,20 +1,15 @@
 from functools import partial
 from typing import Callable, List, Tuple, TypeAlias, Optional
+from enum import Enum, auto
 from dataclasses import dataclass
 
 import curses
 
+from ..utils import Line
+
 COLOR_GRAY = partial(curses.color_pair, 1)
 COLOR_RED = partial(curses.color_pair, 2)
 COLOR_GREEN = partial(curses.color_pair, 3)
-
-Line: TypeAlias = str | Tuple[str, int] | Tuple[str, Callable[..., int]]
-
-@dataclass
-class UIResult():
-    ui: Optional[str] = None
-    user_input: Optional[str] = None
-    error: Optional[Exception] = None
 
 def curses_add_lines(
     win: curses.window,

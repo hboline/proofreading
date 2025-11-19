@@ -1,10 +1,13 @@
 from typing import Callable
+from functools import partial
 
 import curses
 from curses.textpad import Textbox
 
 from .base_ui import BaseUI
-from .utils import UIResult, COLOR_GREEN
+from .utils import COLOR_GREEN
+from ..prooftools import paster
+from ..utils import UIResult, FuncContainer, FuncType, PasteOption
 
 def _textbox_validator(*args: int) -> Callable[[int], int]:
     def _textbox_validator_func(ch: int) -> int:
@@ -41,7 +44,7 @@ class ManualInput(BaseUI):
         if input == '':
             output.error = Exception("no text entered")
         else:
-            output.user_input = input
+            output.action = FuncContainer(partial(paster, input), FuncType.NoCopy)
 
         return output
 

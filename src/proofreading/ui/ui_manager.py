@@ -4,8 +4,8 @@ from typing import Dict, TYPE_CHECKING
 from .base_ui import BaseUI
 from .main_ui import MainUI
 from .options_ui import OptionsUI
-from .utils import UIResult
 from .interactors import ManualInput, AddSessionRule
+from ..utils import UIResult
 if TYPE_CHECKING:
     from ..controller import State
 

@@ -26,4 +26,3 @@ def toggle_show_output(self: App):
     
 def clear_history(self: App):
     self.state.action_history = []
- 

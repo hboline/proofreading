@@ -1,13 +1,23 @@
+from typing import Callable
 from .base_ui import BaseUI
-from .utils import UIResult, COLOR_GRAY, COLOR_RED
-from ..controller import OPTIONS_ACTIONS
-from ..utils import KEY, KEY_IGNORE
+from .utils import COLOR_GRAY, COLOR_RED
+from ..controller import toggle_convert_english, toggle_show_output
+from ..utils import KEY, KEY_IGNORE, UIResult, FuncContainer, FuncType
 
 import curses
 
 class OptionsUI(BaseUI):
     lines = []
 
+    actions = {
+        '1': FuncContainer(toggle_convert_english, FuncType.Super),
+        '2': FuncContainer(toggle_show_output, FuncType.Super),
+    }
+
+    to_other_ui = {
+        KEY.bksp: "main",
+    }
+    
     def draw(self, state) -> curses.window:
         vars = state.vars
         win = state.screen
@@ -40,16 +50,20 @@ class OptionsUI(BaseUI):
         if user_input in KEY_IGNORE:
             return output
         
-        if user_input == KEY.bksp:
-            output.ui = "main"
+        try:
+            output.ui = self.to_other_ui[user_input]
+        except KeyError:
+            pass
+        else:
             output.error = None
             return output
-
+            
         try:
-            output.action = OPTIONS_ACTIONS[user_input]
+            action = self.actions[user_input]
         except KeyError:
             output.error = Exception(f"invalid input {user_input}")
         else:
             output.error = None
+            output.action = FuncContainer(action) if isinstance(action, Callable) else action
         
         return output

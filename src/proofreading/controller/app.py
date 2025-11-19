@@ -1,16 +1,12 @@
-from __future__ import annotations
 from dataclasses import dataclass, astuple, field
-from typing import Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import Callable, Dict, List, Optional
 import inspect
 from functools import partial
 
 import curses
 
-from .utils import FuncContainer, FuncType, PasteOption
-from .actions import MAIN_ACTIONS, function_stringifier
-from ..utils import Clipboard, Window
-if TYPE_CHECKING:
-    from ..ui import UIResult
+from .utils import function_stringifier
+from ..utils import Clipboard, Window, UIResult, FuncContainer, FuncType, PasteOption
 
 @dataclass
 class Vars():
@@ -60,7 +56,22 @@ class App():
             except Exception as e:
                 self.state.error = e
 
-    def process_action(self, FC: FuncContainer):
+    def handle_result(self, result: UIResult):
+        # check next UI
+        if result.ui:
+            self.state.active_ui = result.ui
+        
+        # check for error
+        if result.error:
+            self.state.error = result.error
+        else:
+            self.state.error = None
+
+        # check for actions
+        if (action := result.action):
+            self.process_action(action)
+               
+    def process_action(self, container: FuncContainer):
         # explicit definition of FuncContainer types
         func: Callable
         func_type: FuncType
@@ -74,7 +85,7 @@ class App():
         paste_type,\
         is_special,\
         special_default\
-        = astuple(FC)
+        = astuple(container)
         
         # get reader window, clipboard object, and save clipboard
         reader = self.state.reader_window
@@ -105,7 +116,7 @@ class App():
                 word = func.args[0]
                 func = func.func
             case FuncType.Super:
-                result = func(self.state) # NOTE: might need a better way to handle this
+                result = func(self) # NOTE: might need a better way to handle this
                 if result is None:
                     return
         
@@ -146,26 +157,3 @@ class App():
         c.paste()
         c.reset()
         
-    def handle_result(self, result: UIResult):
-        # check next UI
-        if result.ui:
-            self.handle_result(self.activate_ui(result.ui, self.state))
-        
-        # check for error
-        if result.error:
-            self.state.error = result.error
-        else:
-            self.state.error = None
-
-        # check for actions
-        if result.user_input:
-            try:
-                action = MAIN_ACTIONS[result.user_input]
-            except KeyError:
-                self.state.error = Exception(f"invalid input {result.user_input}")
-            else:
-                if isinstance(action, Callable):
-                    self.process_action(FuncContainer(action))
-                elif isinstance(action, FuncContainer):
-                    self.process_action(action)
-               

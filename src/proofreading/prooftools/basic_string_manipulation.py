@@ -1,7 +1,7 @@
 import webbrowser
 import re
 
-from ..utils.constants import SYMBOLS
+from ..utils import SYMBOLS
 from .utils import is_acronym
     
 def delete_symbol(word: str, symbol_to_remove: str | None) -> str:

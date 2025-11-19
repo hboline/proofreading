@@ -1,29 +1,20 @@
-from __future__ import annotations
-from typing import Callable, Optional, Dict, TYPE_CHECKING
-from dataclasses import dataclass
-from enum import Enum, auto
+from typing import Callable, TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from .app import State
+from ..utils import Action, FuncContainer
 
-class PasteOption(Enum):
-    Bracketed = auto(),
-    Raw = auto(),
-    Nothing = auto(),
+def function_stringifier(
+    func: Action,
+    *args
+) -> str:
+    if isinstance(func, FuncContainer):
+        func = func.func
+    elif isinstance(func, Callable):
+        func = func
 
-class FuncType(Enum):
-    Default = auto(),
-    NoCopy = auto(),
-    Super = auto(),
+    func_name = str(func).split()[1]
+    args = [f"\"{arg}\"" if isinstance(arg, str) else arg for arg in args]
 
-@dataclass
-class FuncContainer:
-    func: Callable
-    func_type: FuncType = FuncType.Default
-    paste_type: PasteOption = PasteOption.Bracketed
-    special: bool = False
-    special_default: Optional[str] = None
-
-    def __post_init__(self):
-        if self.special is True:
-            assert self.special_default is not None
+    func_string = f"{func_name}" + \
+        (f"({', '.join(str(arg) for arg in args)})" if (args and args != ['\"\"']) else '')
+    
+    return func_string
