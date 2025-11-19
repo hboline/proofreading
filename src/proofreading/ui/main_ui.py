@@ -2,13 +2,13 @@
 from typing import Callable, Dict
 from functools import partial
 
+import curses
+
 from .base_ui import BaseUI
 from .utils import COLOR_GRAY
-from ..utils import KEY, KEY_IGNORE, UIResult, FuncContainer, FuncType, PasteOption, Action
+from ..common import KEY, KEY_IGNORE, UIResult, FuncContainer, FuncType, PasteOption, Action
 from ..prooftools import *
 from ..controller import close_app, filesave, clear_history
-
-import curses
 
 class MainUI(BaseUI):
     lines = [

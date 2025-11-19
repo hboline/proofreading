@@ -6,7 +6,9 @@ from functools import partial
 import curses
 
 from .utils import function_stringifier
-from ..utils import Clipboard, Window, UIResult, FuncContainer, FuncType, PasteOption
+from .clipboard import Clipboard
+from .window import Window
+from ..common import UIResult, FuncContainer, FuncType, PasteOption
 
 @dataclass
 class Vars():

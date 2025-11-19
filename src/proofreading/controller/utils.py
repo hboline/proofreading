@@ -1,6 +1,6 @@
-from typing import Callable, TYPE_CHECKING
+from typing import Callable
 
-from ..utils import Action, FuncContainer
+from ..common import Action, FuncContainer
 
 def function_stringifier(
     func: Action,

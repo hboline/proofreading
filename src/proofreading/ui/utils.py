@@ -1,11 +1,9 @@
 from functools import partial
-from typing import Callable, List, Tuple, TypeAlias, Optional
-from enum import Enum, auto
-from dataclasses import dataclass
+from typing import Callable, List
 
 import curses
 
-from ..utils import Line
+from ..common import Line
 
 COLOR_GRAY = partial(curses.color_pair, 1)
 COLOR_RED = partial(curses.color_pair, 2)

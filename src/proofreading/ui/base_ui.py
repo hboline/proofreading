@@ -1,13 +1,14 @@
 from __future__ import annotations
 from typing import List, TYPE_CHECKING
 
+import curses
+
 from .utils import COLOR_GRAY, COLOR_RED, COLOR_GREEN, curses_add_lines
-from ..utils import UIResult, Line
+from ..common import UIResult, Line
 
 if TYPE_CHECKING:
     from ..controller import State
-    
-import curses
+   
 
 # base UI class all UIs will inherit from 
 class BaseUI:

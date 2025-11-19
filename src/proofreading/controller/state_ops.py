@@ -3,11 +3,11 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from .app import App
-
 import curses
 from pyautogui import hotkey
+
+if TYPE_CHECKING:
+    from .app import App
 
 def close_app(*_):
     curses.endwin()

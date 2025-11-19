@@ -1,10 +1,11 @@
 from typing import Callable
+
+import curses
+
 from .base_ui import BaseUI
 from .utils import COLOR_GRAY, COLOR_RED
 from ..controller import toggle_convert_english, toggle_show_output
-from ..utils import KEY, KEY_IGNORE, UIResult, FuncContainer, FuncType
-
-import curses
+from ..common import KEY, KEY_IGNORE, UIResult, FuncContainer, FuncType
 
 class OptionsUI(BaseUI):
     lines = []

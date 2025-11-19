@@ -7,7 +7,7 @@ from curses.textpad import Textbox
 from .base_ui import BaseUI
 from .utils import COLOR_GREEN
 from ..prooftools import paster
-from ..utils import UIResult, FuncContainer, FuncType, PasteOption
+from ..common import UIResult, FuncContainer, FuncType, PasteOption
 
 def _textbox_validator(*args: int) -> Callable[[int], int]:
     def _textbox_validator_func(ch: int) -> int:
