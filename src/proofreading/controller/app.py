@@ -1,14 +1,17 @@
-from dataclasses import dataclass, astuple, field
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import inspect
 from functools import partial
 
 import curses
 
+from proofreading.common.utils import containerize
+
 from .utils import function_stringifier
 from .clipboard import Clipboard
 from .window import Window
-from ..common import BaseUI, UIResult, FuncContainer, FuncType, PasteOption, RecursiveFunc
+from ..prooftools import chain
+from ..common import BaseUI, UIResult, FuncContainer, FuncType, Action, PasteOption, FuncChain, istype
 
 @dataclass
 class Vars():
@@ -84,7 +87,7 @@ class App():
             case FuncType.Default:
                 assert input is not None
                 args.append(input)
-            case FuncType.NoCopy:
+            case FuncType.NoCopy | FuncType.Dummy:
                 assert isinstance(func, partial)
                 args += [*func.args]
                 kwargs |= {k:v for k,v in func.keywords.items()}
@@ -106,21 +109,22 @@ class App():
         
         return output, func, args, kwargs
     
-    def process_action(self, container: FuncContainer):
-        # process BaseUI actions
-        if isinstance(container.func, BaseUI):
-            return self.handle_ui_result(container.func.run(self.state))
-        else:
-            assert not isinstance(container.func, BaseUI)
+    def process_action(self, container: Action):
+        if isinstance(container, BaseUI):
+            return self.handle_ui_result(container.run(self.state))
         
         self.clipboard.save()
+        self.reader.activate()
+        self.clipboard.copy()
+        input = self.clipboard.get()
 
-        input: Optional[str] = None
-        if container.func_type is FuncType.Default:
-            self.reader.activate()
-            self.clipboard.copy()
-            input = self.clipboard.get()
-
+        if isinstance(container, FuncChain):
+            result = input
+            for link in container.chain:
+                result, *_ = self.get_result(link.func, link.func_type, result)
+            assert result is not None
+            container = FuncContainer(partial(chain, _input = result), FuncType.Dummy)
+        
         try:
             result, func, args, kwargs = self.get_result(container.func, container.func_type, input)
         except Exception as e:

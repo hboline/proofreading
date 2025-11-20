@@ -160,3 +160,6 @@ def look_up_word(word: str) -> None:
     except AssertionError:
         raise Exception("webbrowser: failed to open browser")
     
+# dummy chain function for display
+def chain(_input: str) -> str:
+    return _input

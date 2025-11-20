@@ -1,7 +1,9 @@
+from typing import Callable
+
 from ..common import Action, istype
 
 def function_stringifier(
-    func: Action,
+    func: Action | Callable,
     *args,
     **kwargs
 ) -> str:

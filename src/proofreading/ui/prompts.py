@@ -1,14 +1,12 @@
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable, Literal, Optional
 from functools import partial
 
 import curses
 from curses.textpad import Textbox
 
-from proofreading.prooftools.basic_string_manipulation import delete_symbol
-
 from .utils import COLOR_GREEN
-from ..prooftools import paster
-from ..common import BaseUI, UIResult, FuncContainer, FuncType, PasteOption
+from ..prooftools import paster, delete_symbol
+from ..common import SYMBOLS, BaseUI, UIResult, FuncContainer, FuncType, FuncChain, containerize
 
 def _textbox_validator(*args: int, getch: bool = False) -> Callable[[int], int]:
     def _textbox_validator_func(ch: int) -> int:
@@ -26,16 +24,22 @@ def _prompt(
     text_color: int = COLOR_GREEN(),
     validation_chars: Iterable[int] = (10,13),
     error_message: Optional[str] = None,
+    curs: int = 2,
+    getch: bool = False,
 ) -> str:
-    if message is None:
-        return curses.keyname(win.getch()).decode()
-    
     validator = _textbox_validator(*validation_chars)
 
-    curses.curs_set(2)
+    curses.curs_set(curs)
     _, max_x = win.getmaxyx()
     
-    win.addstr(y, x, message, text_color)
+    if message is not None:
+        win.addstr(y, x, message, text_color)
+        win.refresh()
+        
+    if getch:
+        return curses.keyname(win.getch()).decode()
+    
+    assert message is not None
     subwin = curses.newwin(n_lines, max_x-len(message), y, len(message))
     box = Textbox(subwin)
 
@@ -92,7 +96,13 @@ class DeleteSymbol(BaseUI):
     def run(self, state) -> UIResult:
         win = self.draw(state)
 
-        input = _prompt(win)
+        input = _prompt(
+            win,
+            5, 0,
+            "[2] delete symbol: " + ' '.join(f"[{ch}]" for ch in SYMBOLS),
+            curs=0,
+            getch=True
+        )
         
         output: UIResult = UIResult("main")
         output.action = FuncContainer(partial(
@@ -103,11 +113,36 @@ class DeleteSymbol(BaseUI):
 
         return output
 
+VALID_CHAIN_COMMANDS = {
+    '1', '2', '3', '4', 'r', 's', 'd', 'f', 'g',
+}
+
 class ChainCommands(BaseUI):
     def run(self, state) -> UIResult:
+        from .main_ui import MainUI
+        actions = MainUI().actions
+        
         win = self.draw(state)
-        win.addstr(1, 0, "[space] chain commands", COLOR_GREEN())
-        return UIResult()
-    # TODO: before I can proceed with this, I need to rewrite/reorganize the
-    #       process_action function in controller.app. It does far too much in
-    #       one pass and needs to be broken up into smaller pieces.
+
+        input = _prompt(
+            win,
+            1, 0,
+            "[space] chain commands: ",
+            validation_chars=(32,)
+        )
+
+        output = UIResult("main")
+
+        valid = [com for com in input if com in VALID_CHAIN_COMMANDS]
+        invalid = [com for com in input if com not in VALID_CHAIN_COMMANDS]
+        
+        if len(invalid) > 0:
+            output.error = Exception(f"removed invalid commands from chain: {''.join(invalid)}")
+        
+        actions = MainUI().actions
+        chain: FuncChain = FuncChain([containerize(actions[com]) for com in valid])
+
+        output.action = containerize(chain)
+        
+        return output
+

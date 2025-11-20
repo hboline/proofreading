@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Tuple, TypeAlias, Optional
+from typing import TYPE_CHECKING, Callable, List, Tuple, TypeAlias, Optional
 from dataclasses import dataclass
 from enum import Enum, auto
 
@@ -7,7 +7,6 @@ import curses
 
 if TYPE_CHECKING:
     from ..controller import State
-    from .types import RecursiveFunc
 
 Line: TypeAlias = str | Tuple[str, int] | Tuple[str, Callable[..., int]]
 
@@ -28,22 +27,22 @@ class FuncType(Enum):
     NoCopy = auto(),
     Super = auto(),
     Prompt = auto(),
+    Dummy = auto(),
 
 @dataclass
 class FuncContainer:
-    func: Callable | BaseUI
+    func: Callable
     func_type: FuncType = FuncType.Default
     paste_type: PasteOption = PasteOption.Bracketed
 
-Action: TypeAlias = Callable | FuncContainer | BaseUI
-
-class RecursiveFunc:
-    def __init__(self, action: Action, queue: Optional[RecursiveFunc]):
-        self.action = action
-        self.queue = queue
-            
+class FuncChain:
+    def __init__(self, chain: List[FuncContainer]):
+        self.chain = chain
+        
+Action: TypeAlias = FuncContainer | BaseUI | FuncChain
+           
 @dataclass
 class UIResult():
     ui: Optional[str] = None
-    action: Optional[FuncContainer] = None
+    action: Optional[Action] = None
     error: Optional[Exception] = None

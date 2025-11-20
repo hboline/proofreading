@@ -7,9 +7,21 @@ import curses
 
 from .prompts import *
 from .utils import COLOR_GRAY, COLOR_RED, COLOR_GREEN, curses_add_lines
-from ..common import BaseUI, KEY, KEY_IGNORE, UIResult, FuncContainer, FuncType, PasteOption, Line, Action
 from ..prooftools import *
 from ..controller import close_app, filesave, clear_history
+from ..common import (
+    BaseUI,
+    KEY,
+    KEY_IGNORE,
+    UIResult,
+    FuncContainer,
+    FuncType,
+    PasteOption,
+    Line,
+    Action,
+    name,
+    containerize,
+)
 
 class MainUI(BaseUI):
     lines = [
@@ -39,7 +51,8 @@ class MainUI(BaseUI):
         ("[esc] exit", COLOR_GRAY()),
     ]
 
-    actions: Dict[str, Action] = {
+    actions: Dict[str, Action | Callable] = {
+        ' ': ChainCommands(),
         KEY.tab: ManualInput(),
         ';': AddSessionRule(),
         '1': hyphenate,
@@ -79,7 +92,9 @@ class MainUI(BaseUI):
         history_lines: List = [(action, COLOR_GREEN()) for action in state.action_history]
         if state.error is not None:
             trunc += 1
-            error_lines = ["",(state.error.args[0], COLOR_RED())]
+            error = name(state.error)
+            msg = str(state.error)
+            error_lines = ["",(msg if msg != '' else error, COLOR_RED())]
             end_lines.extend([error_lines[-1]])
 
         if max_y > len(sub_lines):
@@ -171,8 +186,6 @@ class MainUI(BaseUI):
             output.error = Exception(f"invalid input {user_input}")
         else:
             output.error = None
-            if not isinstance(action, FuncContainer):
-                action = FuncContainer(action)
-            output.action = action
+            output.action = containerize(action)
 
         return output
