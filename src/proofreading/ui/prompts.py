@@ -1,97 +1,113 @@
-from typing import Callable
+from typing import Callable, Iterable, Optional
 from functools import partial
 
 import curses
 from curses.textpad import Textbox
 
-from .base_ui import BaseUI
+from proofreading.prooftools.basic_string_manipulation import delete_symbol
+
 from .utils import COLOR_GREEN
 from ..prooftools import paster
-from ..common import UIResult, FuncContainer, FuncType, PasteOption
+from ..common import BaseUI, UIResult, FuncContainer, FuncType, PasteOption
 
-def _textbox_validator(*args: int) -> Callable[[int], int]:
+def _textbox_validator(*args: int, getch: bool = False) -> Callable[[int], int]:
     def _textbox_validator_func(ch: int) -> int:
-        if ch in args:
+        if getch or ch in args:
             return 7
         return ch
     return _textbox_validator_func
 
-class ManualInput(BaseUI):
-    def draw(self, state) -> curses.window:
-        return state.screen
+def _prompt(
+    win: curses.window,
+    y: int = 0,
+    x: int = 0,
+    message: Optional[str] = None,
+    n_lines: int = 1,
+    text_color: int = COLOR_GREEN(),
+    validation_chars: Iterable[int] = (10,13),
+    error_message: Optional[str] = None,
+) -> str:
+    if message is None:
+        return curses.keyname(win.getch()).decode()
+    
+    validator = _textbox_validator(*validation_chars)
 
+    curses.curs_set(2)
+    _, max_x = win.getmaxyx()
+    
+    win.addstr(y, x, message, text_color)
+    subwin = curses.newwin(n_lines, max_x-len(message), y, len(message))
+    box = Textbox(subwin)
+
+    win.refresh()
+
+    box.edit(validator)
+    input = box.gather().replace('\n','').rstrip()
+
+    if input == '':
+        if error_message is None:
+            error_message = "no text entered"
+        elif error_message[0] == '+':
+            error_message = "no text entered " + error_message.lstrip('+').lstrip()
+        raise ValueError(error_message)
+
+    curses.curs_set(0)
+    return input
+
+class ManualInput(BaseUI):
     def run(self, state) -> UIResult:
         win = self.draw(state)
-        win.addstr(1, 0,"[tab] manual input: ", COLOR_GREEN())
-        curses.curs_set(2)
-    
-        validator = _textbox_validator(10,13)
         
-        _, max_x = win.getmaxyx()
+        output = UIResult("main")
 
-        subwin = curses.newwin(4, max_x-20, 1, 20)
-        box = Textbox(subwin)
-    
-        win.refresh()
-
-        box.edit(validator)
-        input = box.gather().replace('\n','').rstrip()
-
-        curses.curs_set(0)
-    
-        output: UIResult = UIResult("main")
-        
-        if input == '':
-            output.error = Exception("no text entered")
+        try:
+            input = _prompt(win, 2, 0, "[tab] manual input: ", n_lines=4)
+        except ValueError as e:
+            output.error = e
         else:
             output.action = FuncContainer(partial(paster, input), FuncType.NoCopy)
 
         return output
 
 class AddSessionRule(BaseUI):
-    def draw(self, state) -> curses.window:
-        return state.screen
-
     def run(self, state) -> UIResult:
         win = self.draw(state)
-        win.addstr(2, 0, "set rule key: ", COLOR_GREEN())
-        curses.curs_set(2)
-
-        validator = _textbox_validator(10,13)
 
         output: UIResult = UIResult("main")
 
-        _, max_x = win.getmaxyx()
-
-        subwin_key = curses.newwin(1, max_x-14, 2, 14)
-        box_key = Textbox(subwin_key)
-    
-        win.refresh()
-
-        box_key.edit(validator)
-        key_input = box_key.gather().replace('\n','').rstrip()
-    
-        if key_input == '':
-            output.error = Exception("no text entered in key")
-            return output
-    
-        win.addstr(3, 0, "   set value: ", COLOR_GREEN())
-
-        subwin_value = curses.newwin(1, max_x-14, 3, 14)
-        box_value = Textbox(subwin_value)
-
-        win.refresh()
-
-        box_value.edit(validator)
-        value_input = box_value.gather().replace('\n','').rstrip()
-    
-        if value_input == '':
-            output.error = Exception("no text entered in value")
-            return output
-
-        state.session_rules.update({key_input: value_input})
-
-        curses.curs_set(0)
+        try:
+            key_input = _prompt(win, 3, 0, "set rule key: ", error_message="+in key")
+            value_input = _prompt(win, 4, 0, "   set value: ", error_message="+in value")
+        except ValueError as e:
+            output.error = e
+        else:
+            state.session_rules.update({key_input: value_input})
 
         return output
 
+class DeleteSymbol(BaseUI):
+    def __init__(self, none_symbol: str):
+        self.none_symbol = none_symbol
+    
+    def run(self, state) -> UIResult:
+        win = self.draw(state)
+
+        input = _prompt(win)
+        
+        output: UIResult = UIResult("main")
+        output.action = FuncContainer(partial(
+            delete_symbol,
+            symbol_to_remove=input,
+            _none_symbol=self.none_symbol,
+        ))
+
+        return output
+
+class ChainCommands(BaseUI):
+    def run(self, state) -> UIResult:
+        win = self.draw(state)
+        win.addstr(1, 0, "[space] chain commands", COLOR_GREEN())
+        return UIResult()
+    # TODO: before I can proceed with this, I need to rewrite/reorganize the
+    #       process_action function in controller.app. It does far too much in
+    #       one pass and needs to be broken up into smaller pieces.

@@ -1,18 +1,20 @@
 # ruff: noqa: F405
-from typing import Callable, Dict
+from typing import Dict, List
 from functools import partial
+import traceback
 
 import curses
 
-from .base_ui import BaseUI
-from .utils import COLOR_GRAY
-from ..common import KEY, KEY_IGNORE, UIResult, FuncContainer, FuncType, PasteOption, Action
+from .prompts import *
+from .utils import COLOR_GRAY, COLOR_RED, COLOR_GREEN, curses_add_lines
+from ..common import BaseUI, KEY, KEY_IGNORE, UIResult, FuncContainer, FuncType, PasteOption, Line, Action
 from ..prooftools import *
 from ..controller import close_app, filesave, clear_history
 
 class MainUI(BaseUI):
     lines = [
         "Choose option: ",
+        "[space] chain commands",
         "[tab] manual input",
         "[;] add rule",
         "[1] hyphenate",
@@ -38,8 +40,10 @@ class MainUI(BaseUI):
     ]
 
     actions: Dict[str, Action] = {
+        KEY.tab: ManualInput(),
+        ';': AddSessionRule(),
         '1': hyphenate,
-        '2': FuncContainer(delete_symbol, special = True, special_default='2'),
+        '2': DeleteSymbol(none_symbol='2'),
         '3': lower,
         '4': upper,
         '9': FuncContainer(look_up_word, FuncType.Default, PasteOption.Nothing),
@@ -60,12 +64,48 @@ class MainUI(BaseUI):
 
     to_other_ui = {
         '`': "options",
-        KEY.tab: "manual_input",
-        ';': "add_session_rule",
     }
 
     def draw(self, state) -> curses.window:
-        win = super().draw(state)
+        win = state.screen
+        win.clear()
+
+        max_y, max_x  = win.getmaxyx()
+
+        trunc: int = 2
+        sub_lines: List = self.lines.copy()
+        end_lines: List = [("...",COLOR_GRAY())] + [sub_lines[-1]]
+        error_lines: List = []
+        history_lines: List = [(action, COLOR_GREEN()) for action in state.action_history]
+        if state.error is not None:
+            trunc += 1
+            error_lines = ["",(state.error.args[0], COLOR_RED())]
+            end_lines.extend([error_lines[-1]])
+
+        if max_y > len(sub_lines):
+            error_trim = 1 if (max_y - len(sub_lines)) == 1 else 0
+            line_number = curses_add_lines(win, sub_lines) + 1
+            if len(error_lines) > 0:
+                line_number = curses_add_lines(win, error_lines[error_trim:], line_number, wrap_x=True)
+            if len(history_lines) > 0 and state.vars.show_output:
+                line_number = curses_add_lines(
+                    win, 
+                    ['History','─'*max_x],
+                    line_start = line_number + 1 + len(error_lines)//2
+                )
+                
+                curses_add_lines(
+                    win,
+                    [('▸'+line,color) for (line,color) in history_lines[:(max_y-line_number)]],
+                    line_number+1,
+                    wrap_x=True
+                )
+        else:
+            max_line = max_y-trunc
+            _ = curses_add_lines(win, sub_lines[:max_line])
+            _ = curses_add_lines(win, end_lines, max_line, wrap_x=True)
+
+        win.move(0, 0)
         return win
    
     def run(self, state) -> UIResult:
@@ -81,6 +121,39 @@ class MainUI(BaseUI):
         # ignore certain keypresses (e.g. curses.KEY_RESIZE)
         if user_input in KEY_IGNORE:
             return output
+
+        # view error traceback and optionally enter debug mode
+        if user_input == '/':
+            win.clear()
+            line_num = 0
+            if state.error is not None:
+                tb = traceback.format_tb(state.error.__traceback__)
+                tb_lines: List[Line] = [
+                    (line, COLOR_GRAY())
+                    for level
+                    in tb
+                    for line
+                    in level.splitlines()
+                ]
+                line_num = curses_add_lines(win, tb_lines, wrap_x = True)
+            curses_add_lines(
+                win,
+                [
+                    ("[any] enter debugger", COLOR_RED()),
+                    ("[esc] continue", COLOR_GREEN())
+                ],
+                line_num+2
+            )
+            
+            choice = ''
+            while choice in KEY_IGNORE:
+                choice = curses.keyname(win.getch()).decode()
+                
+            if choice == KEY.esc:
+                return output
+            else:
+                curses.endwin()
+                breakpoint()
         
         # check if user activate another ui
         try:
@@ -98,6 +171,8 @@ class MainUI(BaseUI):
             output.error = Exception(f"invalid input {user_input}")
         else:
             output.error = None
-            output.action = FuncContainer(action) if isinstance(action, Callable) else action
+            if not isinstance(action, FuncContainer):
+                action = FuncContainer(action)
+            output.action = action
 
         return output

@@ -4,15 +4,20 @@ import re
 from .utils import is_acronym
 from ..common import SYMBOLS
     
-def delete_symbol(word: str, symbol_to_remove: str | None) -> str:
-    if symbol_to_remove is None:
+def delete_symbol(word: str, symbol_to_remove: str, _none_symbol: str) -> str:
+    output = word
+    if symbol_to_remove == _none_symbol:
         for sym in SYMBOLS:
-            word = word.replace(sym,'')
+            output = output.replace(sym,'')
     elif symbol_to_remove in SYMBOLS:
-        word = word.replace(symbol_to_remove, '')
+        output = output.replace(symbol_to_remove, '')
     else:
         raise ValueError(f"delete symbol: no match for {symbol_to_remove}")
-    return word
+
+    if output == word:
+        raise ValueError("Nothing to delete")
+    
+    return output
 
 def hyphenate(word: str) -> str:
     if (new := word.replace(' ','-')) == word:

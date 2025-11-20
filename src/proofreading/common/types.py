@@ -1,6 +1,22 @@
-from typing import Callable, Tuple, TypeAlias, Optional
+from __future__ import annotations
+from typing import TYPE_CHECKING, Callable, Tuple, TypeAlias, Optional
 from dataclasses import dataclass
 from enum import Enum, auto
+
+import curses
+
+if TYPE_CHECKING:
+    from ..controller import State
+    from .types import RecursiveFunc
+
+Line: TypeAlias = str | Tuple[str, int] | Tuple[str, Callable[..., int]]
+
+class BaseUI:
+    def run(self, state: State) -> UIResult:
+        raise NotImplementedError
+
+    def draw(self, state: State) -> curses.window:
+        return state.screen
 
 class PasteOption(Enum):
     Bracketed = auto(),
@@ -11,22 +27,21 @@ class FuncType(Enum):
     Default = auto(),
     NoCopy = auto(),
     Super = auto(),
+    Prompt = auto(),
 
 @dataclass
 class FuncContainer:
-    func: Callable
+    func: Callable | BaseUI
     func_type: FuncType = FuncType.Default
     paste_type: PasteOption = PasteOption.Bracketed
-    special: bool = False
-    special_default: Optional[str] = None
 
-    def __post_init__(self):
-        if self.special is True:
-            assert self.special_default is not None
+Action: TypeAlias = Callable | FuncContainer | BaseUI
 
-Line: TypeAlias = str | Tuple[str, int] | Tuple[str, Callable[..., int]]
-Action: TypeAlias = Callable | FuncContainer
-
+class RecursiveFunc:
+    def __init__(self, action: Action, queue: Optional[RecursiveFunc]):
+        self.action = action
+        self.queue = queue
+            
 @dataclass
 class UIResult():
     ui: Optional[str] = None

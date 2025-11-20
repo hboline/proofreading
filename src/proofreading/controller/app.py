@@ -1,5 +1,5 @@
 from dataclasses import dataclass, astuple, field
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 import inspect
 from functools import partial
 
@@ -8,7 +8,7 @@ import curses
 from .utils import function_stringifier
 from .clipboard import Clipboard
 from .window import Window
-from ..common import UIResult, FuncContainer, FuncType, PasteOption
+from ..common import BaseUI, UIResult, FuncContainer, FuncType, PasteOption, RecursiveFunc
 
 @dataclass
 class Vars():
@@ -18,9 +18,6 @@ class Vars():
 @dataclass
 class State():
     screen: curses.window
-    clipboard: Clipboard
-    reader_window: Window
-    process_window: Window
     active_ui: Optional[str]
     error: Optional[Exception]
     action_history: List[str]
@@ -40,11 +37,12 @@ class App():
         from ..ui import activate_ui
         self.activate_ui = activate_ui
         
+        self.clipboard = Clipboard(clipboard_value)
+        self.reader = Window(reader_window_name)
+        self.process = Window()
+        
         self.state = State(
             screen = stdscr,
-            clipboard = Clipboard(clipboard_value),
-            reader_window = Window(reader_window_name),
-            process_window = Window(),
             active_ui = "main",
             error = None,
             action_history = [],
@@ -54,11 +52,11 @@ class App():
         while self.state.active_ui is not None:
             result = self.activate_ui(self.state.active_ui, self.state)
             try:
-                self.handle_result(result)
+                self.handle_ui_result(result)
             except Exception as e:
                 self.state.error = e
 
-    def handle_result(self, result: UIResult):
+    def handle_ui_result(self, result: UIResult):
         # check next UI
         if result.ui:
             self.state.active_ui = result.ui
@@ -73,89 +71,86 @@ class App():
         if (action := result.action):
             self.process_action(action)
                
-    def process_action(self, container: FuncContainer):
-        # explicit definition of FuncContainer types
-        func: Callable
-        func_type: FuncType
-        paste_type: PasteOption
-        is_special: bool
-        special_default: Optional[str]
-        
-        # get all fields of FuncContainer as tuple
-        func,\
-        func_type,\
-        paste_type,\
-        is_special,\
-        special_default\
-        = astuple(container)
-        
-        # get reader window, clipboard object, and save clipboard
-        reader = self.state.reader_window
-        c = self.state.clipboard
-        c.save()
-       
-        # NOTE: this is only used for special functions and for printing function to history
-        args = list()
-        
-        # get additional input if function is special (consider baking this into FuncType somehow)
-        if is_special is True:
-            input = curses.keyname(self.state.screen.getch()).decode()
-            if input == special_default:
-                args.append(None)
-            else:
-                args.append(input)
-       
+    def get_result(
+        self,
+        func: Callable,
+        func_type: FuncType,
+        input: Optional[str] = None
+    ) -> Tuple[Optional[str], Callable, List[Any], Dict[Any, Any]]:
         # perform actions based on FuncType
-        word: str = ''
-        result: Optional[str] = None
+        args = list()
+        kwargs = dict()
         match func_type:
             case FuncType.Default:
-                reader.activate()
-                c.copy()
-                word = c.get()
+                assert input is not None
+                args.append(input)
             case FuncType.NoCopy:
                 assert isinstance(func, partial)
-                word = func.args[0]
+                args += [*func.args]
+                kwargs |= {k:v for k,v in func.keywords.items()}
                 func = func.func
             case FuncType.Super:
-                result = func(self) # NOTE: might need a better way to handle this
-                if result is None:
-                    return
+                func(self)
+                return None, func, args, kwargs
+            
+        # get state kwarg if necessary
+        kwargs |= {
+            k:self.state
+            for k,v
+            in inspect.signature(func).parameters.items()
+            if str(v.annotation) == 'State'
+        }
+
+        assert func_type is not FuncType.Super
+        output: str = func(*args, **kwargs)
         
-        # get any additional args/kwargs
-        # NOTE: this currently only looks for a State object from the app and nothing else
-        kwargs = dict()
-        func_kwargs = {k:str(v.annotation) for k,v in inspect.signature(func).parameters.items()}
-        for k,v in func_kwargs.items():
-            if v == 'State':
-                kwargs[k] = self.state
+        return output, func, args, kwargs
+    
+    def process_action(self, container: FuncContainer):
+        # process BaseUI actions
+        if isinstance(container.func, BaseUI):
+            return self.handle_ui_result(container.func.run(self.state))
+        else:
+            assert not isinstance(container.func, BaseUI)
         
-        # call function, get output (if any), and catch exceptions
+        self.clipboard.save()
+
+        input: Optional[str] = None
+        if container.func_type is FuncType.Default:
+            self.reader.activate()
+            self.clipboard.copy()
+            input = self.clipboard.get()
+
         try:
-            if func_type is not FuncType.Super:
-                result = func(word, *args, **kwargs)
+            result, func, args, kwargs = self.get_result(container.func, container.func_type, input)
         except Exception as e:
             raise e
+        else:
+            if container.func_type == FuncType.Super:
+                return
         finally:
-            c.reset()
+            self.clipboard.reset()
 
-        # get string representation of function for printing function to history in main UI
-        args.insert(0, word)
-        self.state.action_history.insert(0, 
-            f"{function_stringifier(func, *args)}" + \
-            (f" -> \"{result}\"" if result and self.state.vars.show_output else '')
+        self.state.action_history.insert(0,
+            f"{function_stringifier(func, *args, **kwargs)}" + (
+                f" -> \"{result}\""
+                if result is not None
+                and self.state.vars.show_output
+                and container.func_type is not FuncType.NoCopy
+                else ''
+            )
         )
-        
+
         # switch to reader window and paste based on PasteOption
-        if not reader.is_active():
-            reader.activate()
-        match paste_type:
+        if not self.reader.is_active():
+            self.reader.activate()
+        match container.paste_type:
             case PasteOption.Nothing:
                 return
             case PasteOption.Bracketed:
-                c.set(f"[{result}]")
+                self.clipboard.set(f"[{result}]")
             case PasteOption.Raw:
-                c.set(f"{result}")
-        c.paste()
-        c.reset()
-        
+                self.clipboard.set(f"{result}")
+        self.clipboard.paste()
+        self.clipboard.reset()
+            

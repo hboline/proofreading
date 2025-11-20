@@ -1,11 +1,10 @@
 from __future__ import annotations
 from typing import Dict, TYPE_CHECKING
 
-from .base_ui import BaseUI
 from .main_ui import MainUI
 from .options_ui import OptionsUI
 from .prompts import ManualInput, AddSessionRule
-from ..common import UIResult
+from ..common import UIResult, BaseUI
 
 if TYPE_CHECKING:
     from ..controller import State

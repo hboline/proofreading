@@ -15,7 +15,7 @@ def close_app(*_):
     sys.exit()
 
 def filesave(self: App):
-    self.state.reader_window.activate()
+    self.reader.activate()
     hotkey("ctrl","s")
     
 def toggle_convert_english(self: App):
