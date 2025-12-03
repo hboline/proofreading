@@ -1,18 +1,23 @@
 import webbrowser
 import re
 
-from ..utils.constants import SYMBOLS
-from ..prooftools.helpers import is_acronym
+from .utils import is_acronym
+from ..common import SYMBOLS
     
-def delete_symbol(word: str, symbol_to_remove: str | None) -> str:
-    if symbol_to_remove is None:
+def delete_symbol(word: str, symbol_to_remove: str, _none_symbol: str) -> str:
+    output = word
+    if symbol_to_remove == _none_symbol:
         for sym in SYMBOLS:
-            word = word.replace(sym,'')
+            output = output.replace(sym,'')
     elif symbol_to_remove in SYMBOLS:
-        word = word.replace(symbol_to_remove, '')
+        output = output.replace(symbol_to_remove, '')
     else:
         raise ValueError(f"delete symbol: no match for {symbol_to_remove}")
-    return word
+
+    if output == word:
+        raise ValueError("Nothing to delete")
+    
+    return output
 
 def hyphenate(word: str) -> str:
     if (new := word.replace(' ','-')) == word:
@@ -44,7 +49,9 @@ def pluralize(word: str) -> str:
     re_match = re.search("..s$", word)
     if re_match is not None:
         end = re_match.group() 
-        if end == 'ies':
+        if end[0] in VOWELS and end[1:] == 'ss':
+            pass
+        elif end == 'ies':
             return word.rstrip(end) + 'y'
         elif end == 'ves':
             return word.rstrip(end) + 'fe' if word[-1] in VOWELS else 'f'
@@ -62,11 +69,20 @@ def pluralize(word: str) -> str:
         
     last_1 = word[-1]
     last_2 = word[-2:]
+    last_3 = word[-3:]
     if last_2 in ['ss','ch','sh'] or last_1 in ['s','x','z']:
         return word + 'es'
     elif last_2[0] not in VOWELS and last_1 == 'y':
         return word[:-1] + 'ies'
-    elif ((val := last_2) == 'fe') or ((val := last_1) == 'f'):
+    elif (
+            (val := last_2) == 'fe' or (
+                (val := last_1) == 'f' and
+                not (
+                    all(i in VOWELS for i in last_3[:2]) or
+                    last_2 == "ff"
+                )
+            )
+        ):
         return word[:-len(val)] + 'ves'
     else:
         return word + 's'
@@ -155,3 +171,6 @@ def look_up_word(word: str) -> None:
     except AssertionError:
         raise Exception("webbrowser: failed to open browser")
     
+# dummy chain function for display
+def chain(_input: str) -> str:
+    return _input

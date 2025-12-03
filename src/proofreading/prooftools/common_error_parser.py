@@ -1,9 +1,10 @@
 from __future__ import annotations
 from typing import Callable, TYPE_CHECKING, Dict
-if TYPE_CHECKING:
-    from app import State
 
-from ..utils.constants import COMERRDICT, ABBVDICT, EN2AMDICT
+from ..common import COMERRDICT, ABBVDICT, EN2AMDICT
+
+if TYPE_CHECKING:
+    from ..controller import State
 
 def consume_dict(
     input: str,

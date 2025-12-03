@@ -1,6 +1,6 @@
 import curses
 
-from .app import App
+from .controller import App
 
 def run(stdscr: curses.window):
     curses.curs_set(0)

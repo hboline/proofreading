@@ -17,6 +17,7 @@ LIGDICT = {
     '\x0c': 'fi',
     '\x0b': 'ff',
     '\x0e': 'ffi',
+    '\r': 'fl',
     # foreign/special letters
     '\x7fo': 'ö',
     # symbols
