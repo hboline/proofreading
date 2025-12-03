@@ -37,7 +37,9 @@ def _prompt(
         win.refresh()
         
     if getch:
-        return curses.keyname(win.getch()).decode()
+        # curses.flushinp()
+        ch = curses.keyname(win.getch()).decode()
+        return ch
     
     assert message is not None
     subwin = curses.newwin(n_lines, max_x-len(message), y, len(message))
@@ -59,13 +61,28 @@ def _prompt(
     return input
 
 class ManualInput(BaseUI):
+
+    def __init__(self, alt_val=False):
+        self.alt_val = alt_val
+    
     def run(self, state) -> UIResult:
+        if self.alt_val is True:
+            validation_chars = (10,13,93)
+        else:
+            validation_chars = (10,13)
+        
         win = self.draw(state)
         
         output = UIResult("main")
-
+        
         try:
-            input = _prompt(win, 2, 0, "[tab] manual input: ", n_lines=4)
+            input = _prompt(
+                win,
+                2, 0,
+                "[tab] manual input: ",
+                n_lines=4,
+                validation_chars=validation_chars
+            )
         except ValueError as e:
             output.error = e
         else:
@@ -80,7 +97,7 @@ class AddSessionRule(BaseUI):
         output: UIResult = UIResult("main")
 
         try:
-            key_input = _prompt(win, 3, 0, "set rule key: ", error_message="+in key")
+            key_input = _prompt(win, 3, 0, "set rule key: ", error_message="+in key").lower()
             value_input = _prompt(win, 4, 0, "   set value: ", error_message="+in value")
         except ValueError as e:
             output.error = e
@@ -113,6 +130,8 @@ class DeleteSymbol(BaseUI):
 
         return output
 
+# I can't really think of another way to enforce this other than
+# adding some additional attribute to the Actions in ACTIONS in main_ui
 VALID_CHAIN_COMMANDS = {
     '1', '2', '3', '4', 'r', 's', 'd', 'f', 'g',
 }
@@ -140,9 +159,12 @@ class ChainCommands(BaseUI):
             output.error = Exception(f"removed invalid commands from chain: {''.join(invalid)}")
         
         actions = MainUI().actions
-        chain: FuncChain = FuncChain([containerize(actions[com]) for com in valid])
+        chain: FuncChain = FuncChain(
+            state,
+            [containerize(actions[com]) for com in valid]
+        )
 
-        output.action = containerize(chain)
+        output.action = chain
         
         return output
 

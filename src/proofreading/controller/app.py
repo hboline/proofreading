@@ -109,14 +109,16 @@ class App():
         
         return output, func, args, kwargs
     
-    def process_action(self, container: Action):
+    def process_action(self, container: Action | FuncChain):
         if isinstance(container, BaseUI):
             return self.handle_ui_result(container.run(self.state))
         
+        input = None
         self.clipboard.save()
-        self.reader.activate()
-        self.clipboard.copy()
-        input = self.clipboard.get()
+        if isinstance(container, FuncChain) or container.func_type is FuncType.Default:
+            self.reader.activate()
+            self.clipboard.copy()
+            input = self.clipboard.get()
 
         if isinstance(container, FuncChain):
             result = input
@@ -144,17 +146,24 @@ class App():
                 else ''
             )
         )
-
+        
+        if container.paste_type is PasteOption.Nothing:
+            return
+        
+        assert result is not None
+        qmark = ''
+        if result[-1] == '?':
+            result = result.rstrip('?')
+            qmark = ' ?'
+                
         # switch to reader window and paste based on PasteOption
         if not self.reader.is_active():
             self.reader.activate()
         match container.paste_type:
-            case PasteOption.Nothing:
-                return
             case PasteOption.Bracketed:
-                self.clipboard.set(f"[{result}]")
+                self.clipboard.set(f"[{result}]{qmark}")
             case PasteOption.Raw:
-                self.clipboard.set(f"{result}")
+                self.clipboard.set(f"{result}{qmark}")
         self.clipboard.paste()
         self.clipboard.reset()
             

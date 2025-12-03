@@ -53,6 +53,7 @@ class MainUI(BaseUI):
 
     actions: Dict[str, Action | Callable] = {
         ' ': ChainCommands(),
+        '[': ManualInput(alt_val=True),
         KEY.tab: ManualInput(),
         ';': AddSessionRule(),
         '1': hyphenate,

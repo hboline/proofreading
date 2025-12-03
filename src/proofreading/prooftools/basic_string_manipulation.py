@@ -49,7 +49,9 @@ def pluralize(word: str) -> str:
     re_match = re.search("..s$", word)
     if re_match is not None:
         end = re_match.group() 
-        if end == 'ies':
+        if end[0] in VOWELS and end[1:] == 'ss':
+            pass
+        elif end == 'ies':
             return word.rstrip(end) + 'y'
         elif end == 'ves':
             return word.rstrip(end) + 'fe' if word[-1] in VOWELS else 'f'
@@ -67,11 +69,20 @@ def pluralize(word: str) -> str:
         
     last_1 = word[-1]
     last_2 = word[-2:]
+    last_3 = word[-3:]
     if last_2 in ['ss','ch','sh'] or last_1 in ['s','x','z']:
         return word + 'es'
     elif last_2[0] not in VOWELS and last_1 == 'y':
         return word[:-1] + 'ies'
-    elif ((val := last_2) == 'fe') or ((val := last_1) == 'f'):
+    elif (
+            (val := last_2) == 'fe' or (
+                (val := last_1) == 'f' and
+                not (
+                    all(i in VOWELS for i in last_3[:2]) or
+                    last_2 == "ff"
+                )
+            )
+        ):
         return word[:-len(val)] + 'ves'
     else:
         return word + 's'
