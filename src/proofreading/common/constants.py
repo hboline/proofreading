@@ -24,16 +24,20 @@ LIGDICT = {
     '’': '\'',
     '{': '-', # this one is a little suspicious
     '−': '-',
+    '–': '-',
     # accented latin letters
     '´e': 'é',
     '¨o': 'ö',
     '¨a': 'ä',
+    # U32 characters? E.g., equation symbols
+    '\U00100000': '-',
 }
 
 # common errors with defined fixes
 COMERRDICT = {
     # contractions
     "doesn't": "does not",
+    "didn't": "did not",
     "can't": "cannot",
     "isn't": "is not",
     "it's": "it is",
@@ -41,6 +45,13 @@ COMERRDICT = {
     "aren't": "are not",
     "that's": "that is",
     "let's": "let us",
+    "hasn't": "has not",
+    "don't": "do not",
+    "we're": "we are",
+    "we'll": "we will",
+    "wouldn't": "would not",
+    "couldn't": "could not",
+    "we've": "we have",
     # other
     "towards": "toward",
     "put": "set",
@@ -55,7 +66,9 @@ COMERRDICT = {
     "sixthly": "sixth",
     "—": ", ",
     " —": ", ",
-    # pronouns
+}
+
+PRONOUNDICT = {
     "his": "their",
     "him": "them",
     "he": "they",
@@ -75,6 +88,7 @@ ABBVDICT = {
     "eqs.": "Eqs",
     "fig.": "Figure",
     "tab.": "Table",
+    "def.": "Definition",
 }
 
 # english -> american conversion
@@ -88,7 +102,7 @@ EN2AMDICT = {
     "generalis": "generaliz",
     "symbolis": "symboliz",
     "utilis": "utiliz",
-    "characteris": "charateriz",
+    "characteris": "characteriz",
     "modell": "model",
     "visualis": "visualiz",
     "homogenis": "homogeniz",
@@ -104,6 +118,20 @@ EN2AMDICT = {
     "favour": "favor",
     "analys": "analyz",
     "discretis": "discretiz",
+    "parameteris": "parameteriz",
+    "linearis": "lineariz",
+    "specialis": "specializ",
+    "formalis": "formaliz",
+    "regularis": "regulariz",
+    "penalis": "penaliz",
+    "localis": "localiz",
+    "normalis": "normaliz",
+    "standardis": "standardiz",
+    "programme": "program",
+    "stabilis": "stabiliz",
+    "prioritis": "prioritiz",
+    "fulfil": "fulfill",
+    "initialis": "initializ",
 }
 
 

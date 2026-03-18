@@ -20,11 +20,14 @@ def delete_symbol(word: str, symbol_to_remove: str, _none_symbol: str) -> str:
     return output
 
 def hyphenate(word: str) -> str:
+    if len(word.split()) == 1 and '-' not in word:
+        return word + '-'
+    
     if (new := word.replace(' ','-')) == word:
         word = word.replace('-',' ')
     else:
         word = new
-    return word
+    return word.rstrip()
 
 def upper(words: str) -> str:
     words = ' '.join(word[0].upper() + word[1:] for word in words.split())
@@ -54,7 +57,7 @@ def pluralize(word: str) -> str:
         elif end == 'ies':
             return word.rstrip(end) + 'y'
         elif end == 'ves':
-            return word.rstrip(end) + 'fe' if word[-1] in VOWELS else 'f'
+            return word.rstrip(end) + ('fe' if word[-1] in VOWELS else 'f')
         elif (end[-2:] == 'es' and (
                     word.rstrip(end)[-2:] in ['ss','ch','sh'] or
                     word.rstrip(end)[-1] in ['s','x','z'])
@@ -126,12 +129,11 @@ def to_present_participle(word: str) -> str:
         word = word.rstrip('ie') + 'y'
     elif (
         sum(letter in VOWELS for letter in word) == 1 and
-        word[-1] not in (VOWELS + 'x')
+        word[-1] not in (VOWELS + 'kwxy')
     ):
         word += word[-1]
 
     return word + 'ing'
-        
 
 def flip_words(words: str) -> str:
     words_list = words.split()
@@ -170,7 +172,7 @@ def look_up_word(word: str) -> None:
         )
     except AssertionError:
         raise Exception("webbrowser: failed to open browser")
-    
+
 # dummy chain function for display
 def chain(_input: str) -> str:
     return _input

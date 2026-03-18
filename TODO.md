@@ -1,8 +1,10 @@
 ﻿## TODO
-* the `manual_input`, `add_session_rule`, and `chain_commands` might make more sense in ui.py?
-* add a chaining option (i.e. press space to chain, type e.g. "13r", press space to send)
+* function characters (e.g. ?,!) need regex for ingest, and proper display for history output
+* add floating windows that show manual input in middle of screen to make it more clear to the user what they're typing
+* implement regex-based rules (e.g. "`large[- ]time`" -> "`long-time`")
+* add a word-correction engine (relying on some fuzzy dictionary lookup)
 * implement logging
-* allow UI to send keypress to app that are held until some state is reached in the app (*what did I mean by this*)
+* allow UI to send keypress to app that are held until some state is reached in the app (*what did I mean by this?*)
 * add a microsoft word mode (ugh)
 * add a UI for searching Merriam-Webster (incorporate API?)
 * incorporate a dictionary to do pluralization, conjugation, etc.
@@ -12,6 +14,9 @@
   * app is still performing user input, but for some reason the clipboard doesn't seem to be getting manipulated correctly. implementing logging may help diagnose the issue.
   * consider performing window actions in a separate thread
 * make and write LICENSE.md (creative-commons)
+* ~~the `manual_input`, `add_session_rule`, and `chain_commands` might make more sense in ui.py?~~
+* ~~somehow "gives" when run through the pluralizer returns just "[f]"~~
+* ~~add a chaining option (i.e. press space to chain, type e.g. "13r", press space to send)~~
 * ~~handle actions like `"filesave"` or `"toggle history output"` in `process_action` by defining functions that act on `self: App`~~
 * ~~get rid of `SpecialFunc` type; add a `FuncType.Special` enum type for use by `FuncContainer` class~~
 * ~~fix ingest of accented latin characters (e.g. é gets turned into \`e)~~ partially complete, list of latin letters in `LIG_DICT` incomplete

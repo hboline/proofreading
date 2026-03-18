@@ -1,10 +1,14 @@
 from __future__ import annotations
 from typing import Callable, TYPE_CHECKING, Dict
 
-from ..common import COMERRDICT, ABBVDICT, EN2AMDICT
+from .utils import Case, check_case, is_acronym
+from ..common import COMERRDICT, ABBVDICT, EN2AMDICT, PRONOUNDICT
 
 if TYPE_CHECKING:
     from ..controller import State
+
+def replace_exact(input: str, key: str, value: str) -> str:
+    return value if input.lower() == key else input
 
 def consume_dict(
     input: str,
@@ -24,15 +28,15 @@ def comerrdict_func(input: str) -> str:
 
 def abbvdict_func(input: str) -> str:
     for k, v in ABBVDICT.items():
-        output = input.replace(k, v)
+        output = replace_exact(input, k, v)
         if not (output == input):
             return output
         else:
-            output = input.replace(k.replace('.',''), v)
+            output = replace_exact(input, k.replace('.',''), v)
             if not (output == input):
                 return output
     return input
-    
+
 def en2amdict_func(input: str, convert_english: bool = True) -> str:
     if convert_english:
         conversionDict = EN2AMDICT
@@ -45,9 +49,16 @@ def en2amdict_func(input: str, convert_english: bool = True) -> str:
             return output
     return input
 
+def pronoundict_func(input: str) -> str:
+    for k, v in PRONOUNDICT.items():
+        output = replace_exact(input, k, v)
+        if not (output == input):
+            return output
+    return input
+    
 def session_rules_func(input: str, session_rules: Dict[str,str]) -> str:
     for k, v in session_rules.items():
-        output = input.replace(k, v)
+        output = replace_exact(input, k, v)
         if not (output == input):
             return output
     return input
@@ -78,9 +89,13 @@ def common_error_parser(input: str, state: State) -> str:
             pass
         else:
             raise e
-    
+        
     # check for word capitalization before normalizing word
-    capitalized = input[0].isupper()
+    # capitalized = input[0].isupper()
+    try:
+        case = check_case(input.split()[0])
+    except IndexError:
+        raise Exception("nothing in input")
     input = input.lower()
 
     # check through possible common error, allowing for early exiting
@@ -102,7 +117,7 @@ def common_error_parser(input: str, state: State) -> str:
         raise Exception(f"no match found for \"{input}\"")
 
     # capitalize if necessary
-    if capitalized is True:
+    if case is Case.Upper:
         output = output[0].upper() + output[1:]
 
     return output

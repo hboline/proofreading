@@ -1,4 +1,5 @@
 from enum import Enum, auto
+import re
 
 def is_acronym(input: str):
     """
@@ -6,7 +7,9 @@ def is_acronym(input: str):
         
         e.g. "is_acronym("NASA") = True"
     """
-    return all(letter.isupper() for letter in input)
+    if input[-1] == 's':
+        input = input[:-1]
+    return input.isupper()
 
 class Case(Enum):
     Lower = auto()
@@ -16,7 +19,7 @@ class Case(Enum):
 def check_case(word: str) -> Case:
     if is_acronym(word):
         return Case.Acronym
-    if word.isupper():
+    elif re.sub(r'[^A-Za-z]','',word).istitle():
         return Case.Upper
     else:
         return Case.Lower
