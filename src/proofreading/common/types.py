@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, List, Tuple, TypeAlias, Optional
+from typing import TYPE_CHECKING, Callable, List, Tuple, TypeAlias, Optional, ClassVar
 from dataclasses import dataclass
 from enum import Enum, auto
 
@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 Line: TypeAlias = str | Tuple[str, int] | Tuple[str, Callable[..., int]]
 
 class BaseUI:
+    copy_value: bool = False
+    
     def run(self, state: State) -> UIResult:
         raise NotImplementedError
 

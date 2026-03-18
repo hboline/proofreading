@@ -25,6 +25,7 @@ class State():
     error: Optional[Exception]
     action_history: List[str]
     session_rules: Dict[str, str] = field(default_factory=dict)
+    clipboard_text: str = ""
     vars: Vars = field(default_factory=lambda: Vars(
        convert_english=True,
        show_output=True,
@@ -51,6 +52,9 @@ class App():
             action_history = [],
         )
 
+        if clipboard_value is not None:
+            self.state.clipboard_text = clipboard_value
+
     def run(self):
         while self.state.active_ui is not None:
             result = self.activate_ui(self.state.active_ui, self.state)
@@ -59,6 +63,15 @@ class App():
             except Exception as e:
                 self.state.error = e
 
+    def fetch_value(self):
+        self.clipboard.save()
+        self.reader.activate()
+        self.clipboard.copy()
+        input = self.clipboard.get()
+        self.process.activate()
+        self.clipboard.reset()
+        return input
+    
     def handle_ui_result(self, result: UIResult):
         # check next UI
         if result.ui:
@@ -105,12 +118,17 @@ class App():
         }
 
         assert func_type is not FuncType.Super
-        output: str = func(*args, **kwargs)
+        try:
+            output: str = func(*args, **kwargs)
+        except Exception as e:
+            raise e
         
         return output, func, args, kwargs
     
     def process_action(self, container: Action | FuncChain):
         if isinstance(container, BaseUI):
+            if container.copy_value is True:
+                self.state.clipboard_text = self.fetch_value()
             return self.handle_ui_result(container.run(self.state))
         
         input = None
@@ -150,11 +168,14 @@ class App():
         if container.paste_type is PasteOption.Nothing:
             return
         
+        # this needs to be done with regex to be more robust
         assert result is not None
         qmark = ''
         if result[-1] == '?':
             result = result.rstrip('?')
             qmark = ' ?'
+        if result[-1] == '_':
+            result = result.replace('_', ' ')
                 
         # switch to reader window and paste based on PasteOption
         if not self.reader.is_active():

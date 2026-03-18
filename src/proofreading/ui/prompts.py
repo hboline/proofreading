@@ -4,15 +4,18 @@ from functools import partial
 import curses
 from curses.textpad import Textbox
 
+from pyperclip import copy
+
 from .utils import COLOR_GREEN
 from ..prooftools import paster, delete_symbol
 from ..common import SYMBOLS, BaseUI, UIResult, FuncContainer, FuncType, FuncChain, containerize
 
 def _textbox_validator(*args: int, getch: bool = False) -> Callable[[int], int]:
     def _textbox_validator_func(ch: int) -> int:
-        if getch or ch in args:
+        if (getch is True) or (ch in args):
             return 7
-        return ch
+        else:
+            return ch
     return _textbox_validator_func
 
 def _prompt(
@@ -26,6 +29,7 @@ def _prompt(
     error_message: Optional[str] = None,
     curs: int = 2,
     getch: bool = False,
+    dummy: bool = False,
 ) -> str:
     validator = _textbox_validator(*validation_chars)
 
@@ -35,6 +39,8 @@ def _prompt(
     if message is not None:
         win.addstr(y, x, message, text_color)
         win.refresh()
+        if dummy is True:
+            return ""
         
     if getch:
         # curses.flushinp()
@@ -50,6 +56,8 @@ def _prompt(
     box.edit(validator)
     input = box.gather().replace('\n','').rstrip()
 
+    curses.curs_set(0)
+    
     if input == '':
         if error_message is None:
             error_message = "no text entered"
@@ -57,7 +65,6 @@ def _prompt(
             error_message = "no text entered " + error_message.lstrip('+').lstrip()
         raise ValueError(error_message)
 
-    curses.curs_set(0)
     return input
 
 class ManualInput(BaseUI):
@@ -91,13 +98,21 @@ class ManualInput(BaseUI):
         return output
 
 class AddSessionRule(BaseUI):
+    def __init__(self, copy_value: bool = False) -> None:
+        super().__init__()
+        self.copy_value = copy_value
+        
     def run(self, state) -> UIResult:
         win = self.draw(state)
 
         output: UIResult = UIResult("main")
 
         try:
-            key_input = _prompt(win, 3, 0, "set rule key: ", error_message="+in key").lower()
+            if self.copy_value is False:
+                key_input = _prompt(win, 3, 0, "set rule key: ", error_message="+in key").lower()
+            else:
+                key_input = state.clipboard_text.lower()
+                _ = _prompt(win, 3, 0, f"set rule key: {key_input}", error_message="+in key", dummy=True)
             value_input = _prompt(win, 4, 0, "   set value: ", error_message="+in value")
         except ValueError as e:
             output.error = e
