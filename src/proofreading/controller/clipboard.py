@@ -1,5 +1,6 @@
 import pyperclip as ppc
 import pyautogui as pag
+import re
 
 from ..common import LIGDICT
 
@@ -24,9 +25,13 @@ class Clipboard():
         ppc.copy(self.value)
 
     def get(self):
-        return ligature_parser(
-            ppc.paste().replace('\r\n',' ')
-        ).strip("[]")
+        words: str = ppc.paste()
+        words = re.sub('|'.join([
+            r"\r\n[0-9]+",
+            r"[0-9]+\r\n",
+        ]), '', words)
+        words = re.sub(r"\r\n", ' ', words)
+        return ligature_parser(words).strip("[]")
 
     def set(self, word: str):
         ppc.copy(word)
