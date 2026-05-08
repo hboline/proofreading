@@ -26,3 +26,17 @@ def toggle_show_output(self: App):
     
 def clear_history(self: App):
     self.state.action_history = []
+
+def toggle_reader_mode(self: App):
+    text = ""
+    current = self.state.vars.reader
+    if current == "adobe":
+        self.state.vars.reader = "word"
+        text = "the"
+    elif current == "word":
+        self.state.vars.reader = "adobe"
+        text = "[the]"
+    # self.clipboard.set(text)
+    # self.state.clipboard_text = text
+    self.clipboard.value = text
+    self.reader.__init__(self.state.vars.reader)

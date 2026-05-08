@@ -17,6 +17,7 @@ from ..common import BaseUI, UIResult, FuncContainer, FuncType, Action, PasteOpt
 class Vars():
     convert_english: bool
     show_output: bool
+    reader: str
 
 @dataclass
 class State():
@@ -29,21 +30,17 @@ class State():
     vars: Vars = field(default_factory=lambda: Vars(
        convert_english=True,
        show_output=True,
+       reader="adobe",
    ))
     
 class App():
     def __init__(
         self,
         stdscr,
-        reader_window_name: str = "adobe",
         clipboard_value: str | None = None,
     ):
         from ..ui import activate_ui
         self.activate_ui = activate_ui
-        
-        self.clipboard = Clipboard(clipboard_value)
-        self.reader = Window(reader_window_name)
-        self.process = Window()
         
         self.state = State(
             screen = stdscr,
@@ -51,6 +48,10 @@ class App():
             error = None,
             action_history = [],
         )
+
+        self.clipboard = Clipboard(clipboard_value)
+        self.reader = Window(self.state.vars.reader)
+        self.process = Window()
 
         if clipboard_value is not None:
             self.state.clipboard_text = clipboard_value
@@ -96,9 +97,13 @@ class App():
         # perform actions based on FuncType
         args = list()
         kwargs = dict()
+        output_suffix = ''
         match func_type:
             case FuncType.Default:
                 assert input is not None
+                if (input[-1] == ' ') and (self.state.vars.reader == "word"):
+                    input = input.strip()
+                    output_suffix = ' '
                 args.append(input)
             case FuncType.NoCopy | FuncType.Dummy:
                 assert isinstance(func, partial)
@@ -123,7 +128,7 @@ class App():
         except Exception as e:
             raise e
         
-        return output, func, args, kwargs
+        return output+output_suffix, func, args, kwargs
     
     def process_action(self, container: Action | FuncChain):
         if isinstance(container, BaseUI):
@@ -167,6 +172,8 @@ class App():
         
         if container.paste_type is PasteOption.Nothing:
             return
+        elif self.state.vars.reader == "word":
+            container.paste_type = PasteOption.Raw
         
         # this needs to be done with regex to be more robust
         assert result is not None

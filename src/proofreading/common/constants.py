@@ -18,17 +18,18 @@ LIGDICT = {
     '\x0b': 'ff',
     '\x0e': 'ffi',
     '\r': 'fl',
-    # foreign/special letters
-    '\x7fo': 'ö',
     # symbols
     '’': '\'',
     '{': '-', # this one is a little suspicious
     '−': '-',
     '–': '-',
-    # accented latin letters
+    # accented latin letters (Type 1)
     '´e': 'é',
     '¨o': 'ö',
     '¨a': 'ä',
+    # accented latin letters (Type 2)
+    '\x7fo': 'ö',
+    '\x13': 'é',
     # U32 characters? E.g., equation symbols
     '\U00100000': '-',
 }
@@ -52,6 +53,7 @@ COMERRDICT = {
     "wouldn't": "would not",
     "couldn't": "could not",
     "we've": "we have",
+    "wasn't": "was not",
     # other
     "towards": "toward",
     "put": "set",
@@ -132,6 +134,7 @@ EN2AMDICT = {
     "prioritis": "prioritiz",
     "fulfil": "fulfill",
     "initialis": "initializ",
+    "dimensionalis": "dimensionaliz",
 }
 
 

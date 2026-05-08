@@ -2,6 +2,8 @@ from typing import Callable
 
 import curses
 
+from proofreading.controller.state_ops import toggle_reader_mode
+
 from .utils import COLOR_GRAY, COLOR_RED
 from ..controller import toggle_convert_english, toggle_show_output
 from ..common import BaseUI, KEY, KEY_IGNORE, UIResult, FuncContainer, FuncType
@@ -12,6 +14,7 @@ class OptionsUI(BaseUI):
     actions = {
         '1': FuncContainer(toggle_convert_english, FuncType.Super),
         '2': FuncContainer(toggle_show_output, FuncType.Super),
+        '3': FuncContainer(toggle_reader_mode, FuncType.Super),
     }
 
     to_other_ui = {
@@ -31,10 +34,14 @@ class OptionsUI(BaseUI):
             "[2] toggle history output ["
             f"{"show" if vars.show_output else "hidden"}]"
         )
-        win.addstr(2,0,"[bksp] return to main", COLOR_GRAY())
+        win.addstr(2, 0,
+            "[3] toggle reader mode ["
+            f"{state.vars.reader}]"
+        )
+        win.addstr(3,0,"[bksp] return to main", COLOR_GRAY())
 
         if state.error:
-            win.addstr(3, 0, state.error.args[0], COLOR_RED())
+            win.addstr(4, 0, state.error.args[0], COLOR_RED())
         
         return win
     

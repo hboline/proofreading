@@ -111,7 +111,7 @@ class AddSessionRule(BaseUI):
             if self.copy_value is False:
                 key_input = _prompt(win, 3, 0, "set rule key: ", error_message="+in key").lower()
             else:
-                key_input = state.clipboard_text.lower()
+                key_input = state.clipboard_text.lower().strip()
                 _ = _prompt(win, 3, 0, f"set rule key: {key_input}", error_message="+in key", dummy=True)
             value_input = _prompt(win, 4, 0, "   set value: ", error_message="+in value")
         except ValueError as e:
