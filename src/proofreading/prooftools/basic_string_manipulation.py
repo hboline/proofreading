@@ -57,7 +57,7 @@ def pluralize(word: str) -> str:
         elif end == 'ies':
             return word.rstrip(end) + 'y'
         elif end == 'ves':
-            return word.rstrip(end) + ('fe' if word[-1] in VOWELS else 'f')
+            return word.rstrip(end) + ('fe' if word[-2] in VOWELS else 'f')
         elif (end[-2:] == 'es' and (
                     word.rstrip(end)[-2:] in ['ss','ch','sh'] or
                     word.rstrip(end)[-1] in ['s','x','z'])
@@ -123,10 +123,10 @@ def to_present_participle(word: str) -> str:
         e.g. \"hop\" -> \"hop[ping]\"
              \"hop[e]\" -> \"hop[ing]\"
     """
-    if word[-1] == 'e':
-        word = word.rstrip('e')
-    elif word[-2:] == 'ie':
+    if word[-2:] == 'ie':
         word = word.rstrip('ie') + 'y'
+    elif word[-1] == 'e':
+        word = word.rstrip('e')
     elif (
         sum(letter in VOWELS for letter in word) == 1 and
         word[-1] not in (VOWELS + 'kwxy')
