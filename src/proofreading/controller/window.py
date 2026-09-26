@@ -1,5 +1,6 @@
 from pygetwindow import getWindowsWithTitle, getActiveWindow
 from pygetwindow._pygetwindow_win import Win32Window
+from pyautogui import press
 
 def getActiveWindowNotNone() -> Win32Window:
     try:
@@ -24,6 +25,7 @@ class Window():
 
     # maybe this needs an await or something? idk
     def activate(self):
+        press('alt')
         self._handle.activate()
         # assert self.is_active()
 

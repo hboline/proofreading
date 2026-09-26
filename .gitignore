@@ -8,3 +8,9 @@ wheels/
 
 # Vitual environments
 .venv
+.venv*
+
+# other
+/playground
+*test.py
+resources/

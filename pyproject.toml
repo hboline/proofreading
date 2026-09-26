@@ -5,10 +5,17 @@ description = "a TUI written in python for powerful proofreading actions in adob
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "fuzzysearch>=0.8.1",
+    "openai>=3.17.0",
+    "openai-agents>=0.22.3",
+    "platformdirs>=4.11.12",
     "pyautogui>=0.9.54",
+    "pymupdf>=1.28.2",
     "pyperclip>=1.11.0",
+    "pyside6>=6.11.2",
     "pytest>=9.0.0",
-    "windows-curses>=2.4.1",
+    "rapidfuzz>=3.14.6",
+    "windows-curses>=2.4.1; sys_platform == 'win32'",
 ]
 
 [project.scripts]
