@@ -4,6 +4,7 @@ from functools import partial
 import traceback
 
 import curses
+import pyperclip as ppc
 
 from .prompts import *
 from .utils import COLOR_GRAY, COLOR_RED, COLOR_GREEN, curses_add_lines
@@ -38,9 +39,9 @@ class MainUI(BaseUI):
         " ",
         "[e] paste highlighted",
         "[r] flip words",
-        "[t] paste \"Then,\"",
+        '[t] paste "Then,"',
         " ",
-        "[a] paste \"and\"",
+        '[a] paste "and"',
         "[s] pluralizer (simple)",
         "[d] to past tense (simple)",
         "[f] fix common errors",
@@ -48,132 +49,144 @@ class MainUI(BaseUI):
         " ",
         "[c] paste colon",
         " ",
+        "[\\] suggest AI revision",
+        ("[bksp] reset clipboard to default", COLOR_GRAY()),
         ("[`] options", COLOR_GRAY()),
         ("[esc] exit", COLOR_GRAY()),
     ]
 
     actions: Dict[str, Action | Callable] = {
-        ' ': ChainCommands(),
-        '[': ManualInput(alt_val=True),
+        " ": ChainCommands(),
+        "[": ManualInput(alt_val=True),
         KEY.tab: ManualInput(),
-        '\'': AddSessionRule(copy_value=True),
-        ';': AddSessionRule(),
-        '1': hyphenate,
-        '2': DeleteSymbol(none_symbol='2'),
-        '3': lower,
-        '4': upper,
-        '9': FuncContainer(look_up_word, FuncType.Default, PasteOption.Nothing),
-        '0': FuncContainer(google_word, FuncType.Default, PasteOption.Nothing),
-        'e': get_word,
-        'r': flip_words,
-        't': FuncContainer(partial(paster, "Then, "), FuncType.NoCopy),
-        'a': FuncContainer(partial(paster, "and"), FuncType.NoCopy),
-        's': pluralize,
-        'd': to_past_tense,
-        'f': common_error_parser,
-        'g': to_present_participle,
-        'c': FuncContainer(partial(paster, ':'), FuncType.NoCopy, PasteOption.Raw),
+        "'": AddSessionRule(copy_value=True),
+        ";": AddSessionRule(),
+        "1": hyphenate,
+        "2": DeleteSymbol(none_symbol="2"),
+        "3": lower,
+        "4": upper,
+        "9": FuncContainer(look_up_word, FuncType.Default, PasteOption.Nothing),
+        "0": FuncContainer(google_word, FuncType.Default, PasteOption.Nothing),
+        "e": get_word,
+        "r": flip_words,
+        "t": FuncContainer(partial(paster, "Then, "), FuncType.NoCopy),
+        "a": FuncContainer(partial(paster, "and"), FuncType.NoCopy),
+        "s": pluralize,
+        "d": to_past_tense,
+        "f": common_error_parser,
+        "g": to_present_participle,
+        "c": FuncContainer(partial(paster, ":"), FuncType.NoCopy, PasteOption.Raw),
         # 'v': special,
-        ',': FuncContainer(filesave, FuncType.Super),
-        '-': FuncContainer(clear_history, FuncType.Super),
+        ",": FuncContainer(filesave, FuncType.Super),
+        "-": FuncContainer(clear_history, FuncType.Super),
         KEY.esc: FuncContainer(close_app, FuncType.Super),
     }
 
     to_other_ui = {
-        '`': "options",
+        "`": "options",
     }
 
     def draw(self, state) -> curses.window:
         win = state.screen
         win.clear()
 
-        max_y, max_x  = win.getmaxyx()
+        max_y, max_x = win.getmaxyx()
 
         trunc: int = 2
         sub_lines: List = self.lines.copy()
-        end_lines: List = [("...",COLOR_GRAY())] + [sub_lines[-1]]
+        end_lines: List = [("...", COLOR_GRAY())] + [sub_lines[-1]]
         error_lines: List = []
-        history_lines: List = [(action, COLOR_GREEN()) for action in state.action_history]
+        history_lines: List = [
+            (action, COLOR_GREEN()) for action in state.action_history
+        ]
         if state.error is not None:
             trunc += 1
             error = name(state.error)
             msg = str(state.error)
-            error_lines = ["",(msg if msg != '' else error, COLOR_RED())]
+            error_lines = ["", (msg if msg != "" else error, COLOR_RED())]
             end_lines.extend([error_lines[-1]])
 
         if max_y > len(sub_lines):
             error_trim = 1 if (max_y - len(sub_lines)) == 1 else 0
             line_number = curses_add_lines(win, sub_lines) + 1
             if len(error_lines) > 0:
-                line_number = curses_add_lines(win, error_lines[error_trim:], line_number, wrap_x=True)
+                line_number = curses_add_lines(
+                    win, error_lines[error_trim:], line_number, wrap_x=True
+                )
             if len(history_lines) > 0 and state.vars.show_output:
                 line_number = curses_add_lines(
-                    win, 
-                    ['History','─'*max_x],
-                    line_start = line_number + 1 + len(error_lines)//2
+                    win,
+                    ["History", "─" * max_x],
+                    line_start=line_number + 1 + len(error_lines) // 2,
                 )
-                
+
                 curses_add_lines(
                     win,
-                    [('▸'+line,color) for (line,color) in history_lines[:(max_y-line_number)]],
-                    line_number+1,
-                    wrap_x=True
+                    [
+                        ("▸" + line, color)
+                        for (line, color) in history_lines[: (max_y - line_number)]
+                    ],
+                    line_number + 1,
+                    wrap_x=True,
                 )
         else:
-            max_line = max_y-trunc
+            max_line = max_y - trunc
             _ = curses_add_lines(win, sub_lines[:max_line])
             _ = curses_add_lines(win, end_lines, max_line, wrap_x=True)
 
         win.move(0, 0)
         return win
-   
+
     def run(self, state) -> UIResult:
         win = self.draw(state)
-        
-        user_input: str = ''
+
+        user_input: str = ""
 
         user_input = curses.keyname(win.getch()).decode()
         curses.flushinp()
-        
-        output: UIResult = UIResult(error = state.error)
-        
+
+        output: UIResult = UIResult(error=state.error)
+
         # ignore certain keypresses (e.g. curses.KEY_RESIZE)
         if user_input in KEY_IGNORE:
             return output
 
+        # reset clipboard to "[the]"
+        # TODO: do this a better way lol
+        if user_input == KEY.bksp:
+            state.clipboard_text = "[the]"
+            ppc.copy(state.clipboard_text)
+            return output
+
         # view error traceback and optionally enter debug mode
-        if user_input == '/':
+        if user_input == "/":
             win.clear()
             line_num = 0
             if state.error is not None:
                 tb = traceback.format_tb(state.error.__traceback__)
                 tb_lines: List[Line] = [
-                    (line, COLOR_GRAY())
-                    for level
-                    in tb
-                    for line
-                    in level.splitlines()
+                    (line, COLOR_GRAY()) for level in tb for line in level.splitlines()
                 ]
-                line_num = curses_add_lines(win, tb_lines, wrap_x = True)
+                line_num = curses_add_lines(win, tb_lines, wrap_x=True)
             curses_add_lines(
                 win,
                 [
                     ("[any] enter debugger", COLOR_RED()),
-                    ("[esc] continue", COLOR_GREEN())
+                    ("[esc] continue", COLOR_GREEN()),
                 ],
-                line_num+2
+                line_num + 2,
             )
-            
-            choice = ''
+
+            choice = ""
             while choice in KEY_IGNORE:
                 choice = curses.keyname(win.getch()).decode()
-                
+
             if choice == KEY.esc:
                 return output
             else:
                 curses.endwin()
                 breakpoint()
-        
+
         # check if user activate another ui
         try:
             output.ui = self.to_other_ui[user_input]

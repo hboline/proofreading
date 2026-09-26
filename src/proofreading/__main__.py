@@ -1,8 +1,27 @@
+from pathlib import Path
+import tomllib
+
 import curses
+from platformdirs import user_config_dir
 
 from .controller import App
 
+# config
+CONFIG_DIR = Path(user_config_dir(
+  appname="proofreading",
+  roaming=True,
+))
+CONFIG_FILE = CONFIG_DIR / "config.toml"
+
+def load_config(CONFIG_FILE: Path) -> dict:
+    if not CONFIG_FILE.exists():
+        return {}
+
+    with CONFIG_FILE.open('rb') as f:
+        return tomllib.load(f)
+   
 def run(stdscr: curses.window):
+    # initialize curses
     curses.curs_set(0)
     stdscr.keypad(True)
     stdscr.scrollok(False)
@@ -12,7 +31,10 @@ def run(stdscr: curses.window):
     curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
-    app = App(stdscr, clipboard_value="[the]")
+    # initialize config
+    config = load_config(CONFIG_FILE)
+
+    app = App(stdscr, config)
     app.run()
 
 def main():

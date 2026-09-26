@@ -4,16 +4,23 @@ from functools import partial
 import curses
 from curses.textpad import Textbox
 
-from pyperclip import copy
+from pyperclip import copy, paste
 
-from .utils import COLOR_GREEN
+from .utils import COLOR_GREEN, COLOR_RED
 from ..prooftools import paster, delete_symbol
 from ..common import SYMBOLS, BaseUI, UIResult, FuncContainer, FuncType, FuncChain, containerize
+from ..ai import File
+from ..overlay import Overlay
 
-def _textbox_validator(*args: int, getch: bool = False) -> Callable[[int], int]:
+def _textbox_validator(*args: int, box: Textbox, getch: bool = False) -> Callable[[int], int]:
     def _textbox_validator_func(ch: int) -> int:
         if (getch is True) or (ch in args):
             return 7
+        elif ch == 22:
+            text = paste()
+            for c in text:
+                box.do_command(c)
+            return 0
         else:
             return ch
     return _textbox_validator_func
@@ -31,7 +38,7 @@ def _prompt(
     getch: bool = False,
     dummy: bool = False,
 ) -> str:
-    validator = _textbox_validator(*validation_chars)
+    # validator = _textbox_validator(*validation_chars)
 
     curses.curs_set(curs)
     _, max_x = win.getmaxyx()
@@ -53,7 +60,7 @@ def _prompt(
 
     win.refresh()
 
-    box.edit(validator)
+    box.edit(_textbox_validator(*validation_chars, box = box))
     input = box.gather().replace('\n','').rstrip()
 
     curses.curs_set(0)
@@ -182,4 +189,3 @@ class ChainCommands(BaseUI):
         output.action = chain
         
         return output
-

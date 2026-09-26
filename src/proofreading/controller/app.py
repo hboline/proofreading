@@ -1,17 +1,17 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
 import inspect
 from functools import partial
 
 import curses
-
-from proofreading.common.utils import containerize
 
 from .utils import function_stringifier
 from .clipboard import Clipboard
 from .window import Window
 from ..prooftools import chain
 from ..common import BaseUI, UIResult, FuncContainer, FuncType, Action, PasteOption, FuncChain, istype
+from ..ai import File
+from ..overlay import Overlay
 
 @dataclass
 class Vars():
@@ -22,10 +22,12 @@ class Vars():
 @dataclass
 class State():
     screen: curses.window
-    active_ui: Optional[str]
-    error: Optional[Exception]
-    action_history: List[str]
-    session_rules: Dict[str, str] = field(default_factory=dict)
+    active_ui: str | None
+    error: Exception | None
+    action_history: list[str]
+    user_config: dict
+    overlay: Overlay | None = None
+    session_rules: dict[str, str] = field(default_factory=dict)
     clipboard_text: str = ""
     vars: Vars = field(default_factory=lambda: Vars(
        convert_english=True,
@@ -36,8 +38,8 @@ class State():
 class App():
     def __init__(
         self,
-        stdscr,
-        clipboard_value: str | None = None,
+        stdscr: curses.window,
+        config: dict,
     ):
         from ..ui import activate_ui
         self.activate_ui = activate_ui
@@ -47,14 +49,14 @@ class App():
             active_ui = "main",
             error = None,
             action_history = [],
+            user_config=config
         )
 
-        self.clipboard = Clipboard(clipboard_value)
+        self.clipboard = Clipboard(
+           self.state.user_config.get("clipboard_default")
+        )
         self.reader = Window(self.state.vars.reader)
         self.process = Window()
-
-        if clipboard_value is not None:
-            self.state.clipboard_text = clipboard_value
 
     def run(self):
         while self.state.active_ui is not None:
@@ -64,11 +66,11 @@ class App():
             except Exception as e:
                 self.state.error = e
 
-    def fetch_value(self):
+    def fetch_value(self, raw=False):
         self.clipboard.save()
         self.reader.activate()
         self.clipboard.copy()
-        input = self.clipboard.get()
+        input = self.clipboard.get() if not raw else self.clipboard.get_raw()
         self.process.activate()
         self.clipboard.reset()
         return input
@@ -92,8 +94,8 @@ class App():
         self,
         func: Callable,
         func_type: FuncType,
-        input: Optional[str] = None
-    ) -> Tuple[Optional[str], Callable, List[Any], Dict[Any, Any]]:
+        input: str | None = None
+    ) -> tuple[str | None, Callable, list, dict]:
         # perform actions based on FuncType
         args = list()
         kwargs = dict()
@@ -128,12 +130,12 @@ class App():
         except Exception as e:
             raise e
         
-        return output+output_suffix, func, args, kwargs
+        return (output+output_suffix if output is not None else None), func, args, kwargs
     
     def process_action(self, container: Action | FuncChain):
         if isinstance(container, BaseUI):
             if container.copy_value is True:
-                self.state.clipboard_text = self.fetch_value()
+                self.state.clipboard_text = self.fetch_value(raw = True)
             return self.handle_ui_result(container.run(self.state))
         
         input = None

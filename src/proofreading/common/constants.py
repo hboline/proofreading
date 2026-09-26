@@ -60,6 +60,7 @@ COMERRDICT = {
     "the sequel": "what follows",
     "combing": "combining",
     "wellposedness": "well-posedness",
+    "parametriz": "parameteriz",
     "firstly": "first",
     "secondly": "second",
     "thirdly": "third",
@@ -121,6 +122,7 @@ EN2AMDICT = {
     "analys": "analyz",
     "discretis": "discretiz",
     "parameteris": "parameteriz",
+    "parametris": "parameteriz",
     "linearis": "lineariz",
     "specialis": "specializ",
     "formalis": "formaliz",
@@ -135,6 +137,13 @@ EN2AMDICT = {
     "fulfil": "fulfill",
     "initialis": "initializ",
     "dimensionalis": "dimensionaliz",
+    "factoris": "factoriz",
+    "recognis": "recogniz",
+    "conceptualis": "conceptualiz",
+    "labour": "labor",
+    "centralis": "centraliz",
+    "diagonalis": "diagonaliz",
+    "functionalis": "functionaliz",
 }
 
 
@@ -145,4 +154,6 @@ SYMBOLS = [
     '.',
     ',',
     '"',
+    '(',
+    ')',
 ]

@@ -33,6 +33,9 @@ class Clipboard():
         words = re.sub(r"\r\n", ' ', words)
         return ligature_parser(words).strip("[]")
 
+    def get_raw(self):
+        return ppc.paste()
+
     def set(self, word: str):
         ppc.copy(word)
 
