@@ -4,7 +4,7 @@ import curses
 
 from proofreading.controller.state_ops import toggle_reader_mode
 
-from .utils import COLOR_GRAY, COLOR_RED
+from .utils import COLOR_GRAY, COLOR_RED, read_key
 from ..controller import toggle_convert_english, toggle_show_output
 from ..common import BaseUI, KEY, KEY_IGNORE, UIResult, FuncContainer, FuncType
 
@@ -49,7 +49,7 @@ class OptionsUI(BaseUI):
         win = self.draw(state)
 
         user_input: str = ''
-        user_input = curses.keyname(win.getch()).decode()
+        user_input = read_key(win)
         
         output: UIResult = UIResult(error = state.error)
         

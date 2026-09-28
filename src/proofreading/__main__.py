@@ -5,6 +5,7 @@ import curses
 from platformdirs import user_config_dir
 
 from .controller import App
+from .ui.utils import init_colors, set_cursor
 
 # config
 CONFIG_DIR = Path(user_config_dir(
@@ -22,14 +23,11 @@ def load_config(CONFIG_FILE: Path) -> dict:
    
 def run(stdscr: curses.window):
     # initialize curses
-    curses.curs_set(0)
+    set_cursor(0)
     stdscr.keypad(True)
     stdscr.scrollok(False)
 
-    curses.start_color()
-    curses.init_pair(1, 245, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    init_colors()
 
     # initialize config
     config = load_config(CONFIG_FILE)

@@ -1,5 +1,4 @@
-# ruff: noqa: F405
-from typing import Dict, List
+# ruff: noqa: I001, RUF012
 from functools import partial
 import traceback
 
@@ -7,7 +6,7 @@ import curses
 import pyperclip as ppc
 
 from .prompts import *
-from .utils import COLOR_GRAY, COLOR_RED, COLOR_GREEN, curses_add_lines
+from .utils import COLOR_GRAY, COLOR_RED, COLOR_GREEN, curses_add_lines, read_key
 from ..prooftools import *
 from ..controller import close_app, filesave, clear_history
 from ..common import (
@@ -23,6 +22,7 @@ from ..common import (
     name,
     containerize,
 )
+
 
 class MainUI(BaseUI):
     lines = [
@@ -50,12 +50,12 @@ class MainUI(BaseUI):
         "[c] paste colon",
         " ",
         "[\\] suggest AI revision",
-        ("[bksp] reset clipboard to default", COLOR_GRAY()),
-        ("[`] options", COLOR_GRAY()),
-        ("[esc] exit", COLOR_GRAY()),
+        ("[bksp] reset clipboard to default", COLOR_GRAY),
+        ("[`] options", COLOR_GRAY),
+        ("[esc] exit", COLOR_GRAY),
     ]
 
-    actions: Dict[str, Action | Callable] = {
+    actions: dict[str, Action | Callable] = {
         " ": ChainCommands(),
         "[": ManualInput(alt_val=True),
         KEY.tab: ManualInput(),
@@ -93,10 +93,10 @@ class MainUI(BaseUI):
         max_y, max_x = win.getmaxyx()
 
         trunc: int = 2
-        sub_lines: List = self.lines.copy()
-        end_lines: List = [("...", COLOR_GRAY())] + [sub_lines[-1]]
-        error_lines: List = []
-        history_lines: List = [
+        sub_lines: list = self.lines.copy()
+        end_lines: list = [("...", COLOR_GRAY())] + [sub_lines[-1]]
+        error_lines: list = []
+        history_lines: list = [
             (action, COLOR_GREEN()) for action in state.action_history
         ]
         if state.error is not None:
@@ -142,7 +142,7 @@ class MainUI(BaseUI):
 
         user_input: str = ""
 
-        user_input = curses.keyname(win.getch()).decode()
+        user_input = read_key(win)
         curses.flushinp()
 
         output: UIResult = UIResult(error=state.error)
@@ -164,7 +164,7 @@ class MainUI(BaseUI):
             line_num = 0
             if state.error is not None:
                 tb = traceback.format_tb(state.error.__traceback__)
-                tb_lines: List[Line] = [
+                tb_lines: list[Line] = [
                     (line, COLOR_GRAY()) for level in tb for line in level.splitlines()
                 ]
                 line_num = curses_add_lines(win, tb_lines, wrap_x=True)
@@ -179,13 +179,13 @@ class MainUI(BaseUI):
 
             choice = ""
             while choice in KEY_IGNORE:
-                choice = curses.keyname(win.getch()).decode()
+                choice = read_key(win)
 
             if choice == KEY.esc:
                 return output
             else:
                 curses.endwin()
-                breakpoint()
+                breakpoint() #noqa: T100
 
         # check if user activate another ui
         try:

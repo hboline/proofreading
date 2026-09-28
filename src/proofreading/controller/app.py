@@ -1,5 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 import inspect
 from functools import partial
 
@@ -10,8 +12,9 @@ from .clipboard import Clipboard
 from .window import Window
 from ..prooftools import chain
 from ..common import BaseUI, UIResult, FuncContainer, FuncType, Action, PasteOption, FuncChain, istype
-from ..ai import File
-from ..overlay import Overlay
+
+if TYPE_CHECKING:
+    from ..overlay import Overlay
 
 @dataclass
 class Vars():
@@ -137,6 +140,10 @@ class App():
             if container.copy_value is True:
                 self.state.clipboard_text = self.fetch_value(raw = True)
             return self.handle_ui_result(container.run(self.state))
+
+        if isinstance(container, FuncContainer) and container.func_type is FuncType.Super:
+            self.get_result(container.func, container.func_type)
+            return
         
         input = None
         self.clipboard.save()

@@ -6,11 +6,9 @@ from curses.textpad import Textbox
 
 from pyperclip import copy, paste
 
-from .utils import COLOR_GREEN, COLOR_RED
+from .utils import COLOR_GREEN, COLOR_RED, read_key, set_cursor
 from ..prooftools import paster, delete_symbol
 from ..common import SYMBOLS, BaseUI, UIResult, FuncContainer, FuncType, FuncChain, containerize
-from ..ai import File
-from ..overlay import Overlay
 
 def _textbox_validator(*args: int, box: Textbox, getch: bool = False) -> Callable[[int], int]:
     def _textbox_validator_func(ch: int) -> int:
@@ -31,40 +29,36 @@ def _prompt(
     x: int = 0,
     message: Optional[str] = None,
     n_lines: int = 1,
-    text_color: int = COLOR_GREEN(),
+    text_color: int | None = None,
     validation_chars: Iterable[int] = (10,13),
     error_message: Optional[str] = None,
     curs: int = 2,
     getch: bool = False,
     dummy: bool = False,
 ) -> str:
-    # validator = _textbox_validator(*validation_chars)
+    set_cursor(curs)
+    try:
+        _, max_x = win.getmaxyx()
 
-    curses.curs_set(curs)
-    _, max_x = win.getmaxyx()
-    
-    if message is not None:
-        win.addstr(y, x, message, text_color)
+        if message is not None:
+            win.addstr(y, x, message, COLOR_GREEN() if text_color is None else text_color)
+            win.refresh()
+            if dummy:
+                return ""
+
+        if getch:
+            return read_key(win)
+
+        assert message is not None
+        subwin = curses.newwin(n_lines, max_x-len(message), y, len(message))
+        box = Textbox(subwin)
+
         win.refresh()
-        if dummy is True:
-            return ""
-        
-    if getch:
-        # curses.flushinp()
-        ch = curses.keyname(win.getch()).decode()
-        return ch
-    
-    assert message is not None
-    subwin = curses.newwin(n_lines, max_x-len(message), y, len(message))
-    box = Textbox(subwin)
+        box.edit(_textbox_validator(*validation_chars, box=box))
+        input = box.gather().replace('\n', '').rstrip()
+    finally:
+        set_cursor(0)
 
-    win.refresh()
-
-    box.edit(_textbox_validator(*validation_chars, box = box))
-    input = box.gather().replace('\n','').rstrip()
-
-    curses.curs_set(0)
-    
     if input == '':
         if error_message is None:
             error_message = "no text entered"

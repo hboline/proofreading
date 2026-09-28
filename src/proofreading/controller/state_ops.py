@@ -1,17 +1,13 @@
 from __future__ import annotations
-import os
 import sys
 from typing import TYPE_CHECKING
 
-import curses
 from pyautogui import hotkey
 
 if TYPE_CHECKING:
     from .app import App
 
 def close_app(*_):
-    curses.endwin()
-    os.system("cls")
     sys.exit()
 
 def filesave(self: App):

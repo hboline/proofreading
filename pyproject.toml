@@ -5,10 +5,13 @@ description = "a TUI written in python for powerful proofreading actions in adob
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "platformdirs>=4.0.0",
+    "pyobjc-framework-Cocoa>=12.0; sys_platform == 'darwin'",
     "pyautogui>=0.9.54",
     "pyperclip>=1.11.0",
     "pytest>=9.0.0",
-    "windows-curses>=2.4.1",
+    "pywinctl>=0.4.1; sys_platform != 'darwin'",
+    "windows-curses>=2.4.1; sys_platform == 'win32'",
 ]
 
 [project.scripts]
@@ -21,5 +24,4 @@ package = true
 module-root = "src"
 
 [tool.ruff.lint]
-ignore = [ "F401", "F403"]
-
+ignore = [ "F401", "F403", "I001"]
