@@ -47,8 +47,9 @@ def test_missing_mac_reader_reports_error_when_action_needs_it(monkeypatch):
 
 
 def test_activation_failure_stops_action(monkeypatch):
-    target_window = SimpleNamespace(activate=lambda **kwargs: False)
+    target_window = SimpleNamespace(activate=lambda **kwargs: False, isActive=False)
     monkeypatch.setattr(window.sys, "platform", "win32")
+    monkeypatch.setattr(window.time, "sleep", lambda _: None)
     monkeypatch.setattr(
         window,
         "_desktop_windows",
@@ -57,3 +58,24 @@ def test_activation_failure_stops_action(monkeypatch):
 
     with pytest.raises(RuntimeError, match="Could not activate the previously active window"):
         window.Window().activate()
+
+
+def test_windows_activation_waits_for_focus(monkeypatch):
+    checks = iter([False, False, True])
+    target_window = SimpleNamespace(
+        activate=lambda **kwargs: False,
+        title="Adobe Acrobat Reader",
+    )
+    target_window.isActive = False
+    monkeypatch.setattr(window.sys, "platform", "win32")
+    monkeypatch.setattr(window.time, "sleep", lambda _: setattr(target_window, "isActive", next(checks)))
+    monkeypatch.setattr(
+        window,
+        "_desktop_windows",
+        lambda: SimpleNamespace(
+            Re=SimpleNamespace(CONTAINS=2, IGNORECASE=1),
+            getWindowsWithTitle=lambda *args, **kwargs: [target_window],
+        ),
+    )
+
+    window.Window("adobe").activate()

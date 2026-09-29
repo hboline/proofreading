@@ -1,4 +1,5 @@
 import sys
+import time
 
 
 def _desktop_windows():
@@ -90,6 +91,14 @@ class Window:
             )
         else:
             activated = self._handle.activate(wait=True)
+            if sys.platform == "win32" and not activated:
+                # PyWinCtl's Windows activate(wait=True) checks focus immediately.
+                # Give Windows a moment to complete the foreground switch.
+                for _ in range(10):
+                    if self._handle.isActive:
+                        activated = True
+                        break
+                    time.sleep(0.05)
 
         if not activated:
             target = self._partial_name or "the previously active window"
