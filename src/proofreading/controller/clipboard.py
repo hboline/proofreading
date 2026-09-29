@@ -1,8 +1,8 @@
 import pyperclip as ppc
-import pyautogui as pag
 import re
 
 from ..common import LIGDICT
+from .shortcuts import shortcut
 
 def ligature_parser(input: str) -> str:
     for k, v in LIGDICT.items():
@@ -40,9 +40,7 @@ class Clipboard():
         ppc.copy(word)
 
     def copy(self):
-        pag.hotkey('ctrl','c')
+        shortcut('c')
     
     def paste(self):
-        pag.hotkey('shift')
-        pag.hotkey('ctrl','v')
-
+        shortcut('v')

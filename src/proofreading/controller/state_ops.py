@@ -2,7 +2,7 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
-from pyautogui import hotkey
+from .shortcuts import shortcut
 
 if TYPE_CHECKING:
     from .app import App
@@ -12,7 +12,7 @@ def close_app(*_):
 
 def filesave(self: App):
     self.reader.activate()
-    hotkey("ctrl","s")
+    shortcut("s")
     
 def toggle_convert_english(self: App):
     self.state.vars.convert_english ^= True
