@@ -10,7 +10,11 @@ def _desktop_windows():
 
 def _mac_workspace():
     from AppKit import NSWorkspace
+    from CoreFoundation import CFRunLoopRunInMode, kCFRunLoopDefaultMode
 
+    # AppKit refreshes its running-application list through the main run loop.
+    # Curses does not run that loop for us. This services it without a fixed wait.
+    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, True)
     return NSWorkspace.sharedWorkspace()
 
 
@@ -33,6 +37,7 @@ class Window:
 
     def __init__(self, partial_name: str | None = None):
         self._partial_name = partial_name
+        self._mac_focus = None
         # Capture the terminal now; named apps can be found when an action needs them.
         self._handle = self._find_window(None) if partial_name is None else None
 
@@ -85,10 +90,16 @@ class Window:
 
         if sys.platform == "darwin":
             from AppKit import NSApplicationActivateIgnoringOtherApps
+            from .macos_focus import MacFocus
 
-            activated = self._handle.activateWithOptions_(
-                NSApplicationActivateIgnoringOtherApps
-            )
+            self._mac_focus = None
+            focus = MacFocus(self._handle.processIdentifier())
+            if not focus.is_active():
+                self._handle.activateWithOptions_(NSApplicationActivateIgnoringOtherApps)
+                focus.raise_window()
+            activated = focus.wait_until_active()
+            if activated:
+                self._mac_focus = focus
         else:
             activated = self._handle.activate(wait=True)
             if sys.platform == "win32" and not activated:
@@ -102,6 +113,8 @@ class Window:
 
         if not activated:
             target = self._partial_name or "the previously active window"
+            if sys.platform == "darwin":
+                raise RuntimeError(f"Could not confirm focus on {target}; no shortcut was sent")
             raise RuntimeError(f"Could not activate {target}")
 
     def is_active(self) -> bool:
@@ -110,5 +123,17 @@ class Window:
         if self._handle is None:
             return False
         if sys.platform == "darwin":
-            return bool(self._handle.isActive())
+            from .macos_focus import MacFocus
+
+            focus = MacFocus(self._handle.processIdentifier())
+            active = focus.is_active()
+            self._mac_focus = focus if active else None
+            return active
         return bool(self._handle.isActive)
+
+    def require_active(self) -> int:
+        """Recheck the previously confirmed macOS target immediately before input."""
+        if self._mac_focus is None or not self._mac_focus.is_active():
+            target = self._partial_name or "the previously active window"
+            raise RuntimeError(f"Focus changed away from {target}; no shortcut was sent")
+        return self._mac_focus.pid

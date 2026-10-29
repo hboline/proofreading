@@ -13,3 +13,4 @@ wheels/
 # other
 /playground
 *test*.py
+!/tests/*.py

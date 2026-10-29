@@ -1,12 +1,14 @@
 [project]
 name = "proofreading"
 version = "0.1.0"
-description = "a TUI written in python for powerful proofreading actions in adobe reader (windows-only)"
+description = "a TUI written in python for powerful proofreading actions in Adobe Reader"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "platformdirs>=4.0.0",
+    "pyobjc-framework-ApplicationServices>=12.0; sys_platform == 'darwin'",
     "pyobjc-framework-Cocoa>=12.0; sys_platform == 'darwin'",
+    "pyobjc-framework-Quartz>=12.0; sys_platform == 'darwin'",
     "pyautogui>=0.9.54",
     "pyperclip>=1.11.0",
     "pytest>=9.0.0",

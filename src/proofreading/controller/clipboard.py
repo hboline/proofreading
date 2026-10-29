@@ -1,8 +1,14 @@
+from __future__ import annotations
+
 import pyperclip as ppc
 import re
+from typing import TYPE_CHECKING
 
 from ..common import LIGDICT
 from .shortcuts import shortcut
+
+if TYPE_CHECKING:
+    from .window import Window
 
 def ligature_parser(input: str) -> str:
     for k, v in LIGDICT.items():
@@ -39,8 +45,8 @@ class Clipboard():
     def set(self, word: str):
         ppc.copy(word)
 
-    def copy(self):
-        shortcut('c')
+    def copy(self, target: Window):
+        shortcut('c', target)
     
-    def paste(self):
-        shortcut('v')
+    def paste(self, target: Window):
+        shortcut('v', target)

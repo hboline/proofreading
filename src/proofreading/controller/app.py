@@ -72,7 +72,7 @@ class App():
     def fetch_value(self, raw=False):
         self.clipboard.save()
         self.reader.activate()
-        self.clipboard.copy()
+        self.clipboard.copy(self.reader)
         input = self.clipboard.get() if not raw else self.clipboard.get_raw()
         self.process.activate()
         self.clipboard.reset()
@@ -149,7 +149,7 @@ class App():
         self.clipboard.save()
         if isinstance(container, FuncChain) or container.func_type is FuncType.Default:
             self.reader.activate()
-            self.clipboard.copy()
+            self.clipboard.copy(self.reader)
             input = self.clipboard.get()
 
         if isinstance(container, FuncChain):
@@ -201,6 +201,8 @@ class App():
                 self.clipboard.set(f"[{result}]{qmark}")
             case PasteOption.Raw:
                 self.clipboard.set(f"{result}{qmark}")
-        self.clipboard.paste()
-        self.clipboard.reset()
+        try:
+            self.clipboard.paste(self.reader)
+        finally:
+            self.clipboard.reset()
             

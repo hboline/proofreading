@@ -1,11 +1,14 @@
 from types import SimpleNamespace
+import sys
 
 import pytest
 
 from proofreading.controller import window
 
 
-def test_mac_reader_uses_bundle_id_and_can_open_after_startup(monkeypatch):
+def test_mac_reader_uses_bundle_id_and_can_open_after_startup(monkeypatch, focus_api):
+    _, _, values = focus_api
+    values[("app", 42), "frontmost"] = False
     running = []
     workspace = SimpleNamespace(runningApplications=lambda: running)
     monkeypatch.setattr(window.sys, "platform", "darwin")
@@ -15,10 +18,17 @@ def test_mac_reader_uses_bundle_id_and_can_open_after_startup(monkeypatch):
     assert not reader.is_active()
 
     activations = []
+
+    def activate(options):
+        activations.append(options)
+        values[("app", 42), "frontmost"] = True
+        return True
+
+    monkeypatch.setitem(sys.modules, "AppKit", SimpleNamespace(NSApplicationActivateIgnoringOtherApps=2))
     running.append(SimpleNamespace(
         bundleIdentifier=lambda: "com.adobe.Acrobat.Pro",
-        activateWithOptions_=lambda options: activations.append(options) or True,
-        isActive=lambda: True,
+        processIdentifier=lambda: 42,
+        activateWithOptions_=activate,
     ))
     reader.activate()
 
@@ -26,8 +36,8 @@ def test_mac_reader_uses_bundle_id_and_can_open_after_startup(monkeypatch):
     assert len(activations) == 1
 
 
-def test_captures_active_mac_app(monkeypatch):
-    active = SimpleNamespace(isActive=lambda: True)
+def test_captures_active_mac_app(monkeypatch, focus_api):
+    active = SimpleNamespace(processIdentifier=lambda: 42)
     workspace = SimpleNamespace(frontmostApplication=lambda: active)
     monkeypatch.setattr(window.sys, "platform", "darwin")
     monkeypatch.setattr(window, "_mac_workspace", lambda: workspace)

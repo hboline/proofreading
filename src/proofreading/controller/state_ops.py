@@ -12,7 +12,7 @@ def close_app(*_):
 
 def filesave(self: App):
     self.reader.activate()
-    shortcut("s")
+    shortcut("s", self.reader)
     
 def toggle_convert_english(self: App):
     self.state.vars.convert_english ^= True
